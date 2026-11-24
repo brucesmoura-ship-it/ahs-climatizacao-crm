@@ -1,0 +1,2348 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AHS Climatização | Ar Condicionado e Elétrica — CRM por Voz</title>
+  
+  <!-- PWA & Meta Tags -->
+  <meta name="theme-color" content="#070a11">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AHS CRM">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  
+  <!-- Tailwind CSS CDN com tema customizado AHS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            ahs: {
+              dark: '#070a11',
+              card: '#0f172a',
+              cardLight: '#1e293b',
+              border: '#334155',
+              cyan: '#00d2ff',
+              cyanHover: '#0ea5e9',
+              gold: '#facc15',
+              goldHover: '#eab308',
+              cold: '#38bdf8',
+              spark: '#fbbf24'
+            }
+          },
+          animation: {
+            'pulse-glow': 'pulseGlow 2s infinite ease-in-out',
+            'float': 'float 3s ease-in-out infinite'
+          },
+          keyframes: {
+            pulseGlow: {
+              '0%, 100%': { boxShadow: '0 0 15px rgba(0, 210, 255, 0.4), 0 0 30px rgba(250, 204, 21, 0.3)' },
+              '50%': { boxShadow: '0 0 25px rgba(0, 210, 255, 0.8), 0 0 45px rgba(250, 204, 21, 0.6)' }
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-5px)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Supabase JS v2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    /* Estilos Customizados & Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #070a11;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    
+    /* Animação do microfone gravando */
+    @keyframes soundwave {
+      0% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.15); opacity: 0.6; }
+      100% { transform: scale(1); opacity: 0.9; }
+    }
+    .recording-wave {
+      animation: soundwave 1.2s infinite ease-in-out;
+    }
+
+    /* Impressão Limpa para Orçamentos / Ordens de Serviço */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #print-area, #print-area * {
+        visibility: visible;
+      }
+      #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white !important;
+        color: black !important;
+        padding: 20px;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-[#070a11] text-slate-100 min-h-screen font-sans selection:bg-ahs-cyan selection:text-black flex flex-col pb-24 md:pb-8">
+
+  <!-- CABEÇALHO PRINCIPAL DA MARCA AHS -->
+  <header class="sticky top-0 z-40 bg-[#070a11]/95 backdrop-blur-md border-b border-ahs-border shadow-xl">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 sm:px-6 flex items-center justify-between gap-3">
+      
+      <!-- Logo e Identidade Visual -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="app.setView('kanban')">
+        <div class="relative w-11 h-11 rounded-lg overflow-hidden border border-ahs-border/80 shadow-md bg-black flex-shrink-0 flex items-center justify-center">
+          <img src="logo.jpg" alt="AHS Climatização" class="w-full h-full object-cover">
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="font-extrabold text-lg sm:text-xl tracking-tight text-white flex items-center">
+              AHS
+              <span class="text-ahs-cyan text-sm sm:text-base ml-1 font-semibold flex items-center gap-0.5">
+                <i data-lucide="snowflake" class="w-3.5 h-3.5 text-ahs-cold inline"></i> Climatização
+              </span>
+              <span class="text-slate-500 mx-1.5 font-normal text-xs sm:text-sm">|</span>
+              <span class="text-ahs-gold text-sm sm:text-base font-semibold flex items-center gap-0.5">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-ahs-spark inline"></i> Elétrica
+              </span>
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-medium hidden sm:block">
+            Ar Condicionado & Soluções Elétricas • CRM com Comando de Voz & Realtime
+          </p>
+        </div>
+      </div>
+
+      <!-- Ações do Topo: Conexão, Voz e Usuário -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        
+        <!-- Indicador de Status Supabase / Modo Demo -->
+        <button id="supabase-status-btn" onclick="app.openSupabaseModal()" 
+          class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-200 bg-ahs-card border-ahs-border hover:border-ahs-cyan text-slate-300">
+          <span id="supabase-indicator-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="supabase-indicator-label" class="hidden md:inline">Supabase Ativo</span>
+          <i data-lucide="database" class="w-3.5 h-3.5 text-slate-400"></i>
+        </button>
+
+        <!-- Botão Novo Atendimento (Topo Desktop) -->
+        <button onclick="app.openModalNovo()" 
+          class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-semibold bg-gradient-to-r from-ahs-cyan to-ahs-cyanHover text-black hover:opacity-95 shadow-md transition-all active:scale-95">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Novo Atendimento</span>
+        </button>
+
+        <!-- Botão de Login / Perfil -->
+        <div id="auth-actions" class="relative">
+          <button id="user-profile-btn" onclick="app.toggleAuthMenu()" 
+            class="flex items-center gap-2 p-1.5 rounded-lg bg-ahs-card border border-ahs-border hover:border-slate-500 text-slate-300 transition-all">
+            <div class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-ahs-gold">
+              <span id="user-avatar-initials">AHS</span>
+            </div>
+            <span id="user-display-name" class="text-xs font-medium max-w-[100px] truncate hidden lg:inline">Equipe AHS</span>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+          </button>
+
+          <!-- Dropdown do Menu do Usuário -->
+          <div id="auth-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-ahs-card border border-ahs-border rounded-xl shadow-2xl p-2 z-50 text-xs">
+            <div class="px-3 py-2 border-b border-ahs-border/60">
+              <p class="font-semibold text-slate-200" id="menu-user-email">operador@ahs.com.br</p>
+              <p class="text-[10px] text-slate-400" id="menu-user-role">Acesso Técnico em Campo</p>
+            </div>
+            <button onclick="app.openSupabaseModal(); app.toggleAuthMenu();" class="w-full text-left px-3 py-2 mt-1 rounded-lg hover:bg-ahs-cardLight text-slate-300 flex items-center gap-2">
+              <i data-lucide="settings" class="w-3.5 h-3.5 text-ahs-cyan"></i> Configurar Banco Supabase
+            </button>
+            <button onclick="app.exportBackupJSON(); app.toggleAuthMenu();" class="w-full text-left px-3 py-2 rounded-lg hover:bg-ahs-cardLight text-slate-300 flex items-center gap-2">
+              <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i> Exportar Dados (Backup)
+            </button>
+            <button onclick="app.openHelpModal(); app.toggleAuthMenu();" class="w-full text-left px-3 py-2 rounded-lg hover:bg-ahs-cardLight text-slate-300 flex items-center gap-2">
+              <i data-lucide="mic" class="w-3.5 h-3.5 text-ahs-gold"></i> Guia de Comandos de Voz
+            </button>
+            <div class="border-t border-ahs-border/60 my-1"></div>
+            <button id="auth-toggle-btn" onclick="app.handleAuthAction()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-red-500/20 text-red-400 flex items-center gap-2">
+              <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Desconectar (Logout)
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- BANNER DE COMANDO DE VOZ INTELIGENTE & BUSCA RÁPIDA -->
+  <section class="bg-gradient-to-b from-[#0b1329] to-[#070a11] border-b border-ahs-border/70 px-4 py-3 sm:px-6">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+      
+      <!-- Barra de Transcrição e Feedback de Voz Ativo -->
+      <div class="w-full md:w-auto flex-1 flex items-center gap-3 bg-ahs-card/90 border border-ahs-border/90 rounded-xl px-3.5 py-2 shadow-inner">
+        <!-- Botão Central de Microfone -->
+        <button id="voice-assistant-btn" onclick="voiceAssistant.toggleListening()" 
+          title="Falar comando de voz inteligente (Ex: 'Novo atendimento: Marcos, ar condicionado, limpeza, orçamento 250')"
+          class="relative p-2.5 rounded-full bg-gradient-to-r from-ahs-cyan via-ahs-cyanHover to-ahs-gold text-black shadow-lg transition-transform active:scale-95 flex-shrink-0 group">
+          <div id="voice-pulse-ring" class="hidden absolute inset-0 rounded-full border-2 border-ahs-cyan recording-wave"></div>
+          <i id="voice-icon-main" data-lucide="mic" class="w-5 h-5 text-black"></i>
+        </button>
+
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5 text-xs font-semibold text-ahs-cyan">
+            <span class="inline-block w-2 h-2 rounded-full bg-ahs-gold animate-ping" id="voice-live-dot" style="display:none;"></span>
+            <span id="voice-status-text">Assistente de Voz AHS (Clique no microfone para ditar ou comandar)</span>
+          </div>
+          <p id="voice-transcript-preview" class="text-xs text-slate-400 italic truncate mt-0.5">
+            Dica: "Criar cliente João, ar condicionado, orçamento 350 reais, a cobrar 350"
+          </p>
+        </div>
+
+        <button onclick="app.openHelpModal()" class="text-xs text-slate-400 hover:text-white p-1 rounded-md" title="Ver exemplos de voz">
+          <i data-lucide="help-circle" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Filtro Rápido e Alternância de Visualização (Kanban vs Tabela vs Dashboard) -->
+      <div class="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end flex-wrap">
+        
+        <!-- Campo de Pesquisa em Tempo Real -->
+        <div class="relative flex-1 md:w-60 min-w-[140px]">
+          <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2"></i>
+          <input type="text" id="search-input" oninput="app.filterSearch(this.value)" placeholder="Buscar cliente, serviço..." 
+            class="w-full pl-8 pr-3 py-1.5 text-xs bg-ahs-card border border-ahs-border rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-ahs-cyan">
+        </div>
+
+        <!-- Seletor de Categoria (Todos, Ar-Condicionado, Elétrica) -->
+        <select id="filter-categoria" onchange="app.filterCategoria(this.value)" 
+          class="bg-ahs-card border border-ahs-border text-xs rounded-lg px-2.5 py-1.5 text-slate-300 focus:outline-none focus:border-ahs-cyan">
+          <option value="todos">Todas Categorias</option>
+          <option value="Ar-Condicionado">❄️ Ar-Condicionado</option>
+          <option value="Elétrica">⚡ Elétrica</option>
+          <option value="Ambos">❄️⚡ Ambos</option>
+        </select>
+
+        <!-- Botões de Modo de Visualização (Kanban / Tabela / Dashboard) -->
+        <div class="flex bg-ahs-card p-0.5 rounded-lg border border-ahs-border">
+          <button id="view-kanban-btn" onclick="app.setView('kanban')" class="px-2.5 py-1 rounded text-xs font-medium bg-ahs-cardLight text-ahs-cyan shadow-sm flex items-center gap-1">
+            <i data-lucide="kanban" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Kanban</span>
+          </button>
+          <button id="view-table-btn" onclick="app.setView('table')" class="px-2.5 py-1 rounded text-xs font-medium text-slate-400 hover:text-white flex items-center gap-1">
+            <i data-lucide="list" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Lista</span>
+          </button>
+          <button id="view-metrics-btn" onclick="app.setView('metrics')" class="px-2.5 py-1 rounded text-xs font-medium text-slate-400 hover:text-white flex items-center gap-1">
+            <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Finanças</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CARDS DE MÉTRICAS FINANCEIRAS RÁPIDAS (RESUMO NO TOPO) -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-2 w-full">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+      
+      <!-- Total de Atendimentos -->
+      <div class="bg-ahs-card border border-ahs-border rounded-xl p-3 sm:p-4 flex items-center justify-between shadow-sm hover:border-slate-500 transition-all">
+        <div>
+          <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Atendimentos</p>
+          <p id="stat-total-count" class="text-lg sm:text-2xl font-extrabold text-white mt-0.5">0</p>
+          <p class="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
+            <span id="stat-count-ac" class="text-ahs-cold">0 Ar</span> • <span id="stat-count-el" class="text-ahs-gold">0 Elét</span>
+          </p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-ahs-cyan">
+          <i data-lucide="users" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- Orçamento Total Passado -->
+      <div class="bg-ahs-card border border-ahs-border rounded-xl p-3 sm:p-4 flex items-center justify-between shadow-sm hover:border-slate-500 transition-all">
+        <div>
+          <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Total Orçado</p>
+          <p id="stat-total-orcado" class="text-lg sm:text-2xl font-extrabold text-ahs-cyan mt-0.5">R$ 0,00</p>
+          <p class="text-[10px] text-slate-500 mt-0.5">Valor em propostas</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-ahs-cyan">
+          <i data-lucide="file-text" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- Saldo a Cobrar / Pendente -->
+      <div class="bg-ahs-card border border-ahs-border rounded-xl p-3 sm:p-4 flex items-center justify-between shadow-sm hover:border-slate-500 transition-all">
+        <div>
+          <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">A Cobrar / Pendente</p>
+          <p id="stat-total-pendente" class="text-lg sm:text-2xl font-extrabold text-ahs-gold mt-0.5">R$ 0,00</p>
+          <p class="text-[10px] text-amber-500/80 font-medium mt-0.5">Saldo em aberto</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-ahs-gold">
+          <i data-lucide="clock" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- Total Concluído e Recebido -->
+      <div class="bg-ahs-card border border-ahs-border rounded-xl p-3 sm:p-4 flex items-center justify-between shadow-sm hover:border-slate-500 transition-all">
+        <div>
+          <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Concluído / Pago</p>
+          <p id="stat-total-pago" class="text-lg sm:text-2xl font-extrabold text-emerald-400 mt-0.5">R$ 0,00</p>
+          <p class="text-[10px] text-emerald-500/80 font-medium mt-0.5">Faturamento liquidado</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+          <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ÁREA PRINCIPAL DINÂMICA: KANBAN / LISTA / MÉTRICAS -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex-1 w-full">
+    
+    <!-- 1. VISUALIZAÇÃO EM KANBAN (FLUXO DAS 7 SESSÕES / ETAPAS) -->
+    <div id="view-kanban" class="overflow-x-auto pb-4">
+      <div class="flex gap-4 min-w-[1550px] items-start" id="kanban-columns-container">
+        <!-- Renderizado dinamicamente pelo JavaScript com as 7 etapas -->
+      </div>
+    </div>
+
+    <!-- 2. VISUALIZAÇÃO EM TABELA / LISTA COMPACTA -->
+    <div id="view-table" class="hidden">
+      <div class="bg-ahs-card border border-ahs-border rounded-xl shadow-xl overflow-hidden">
+        <div class="p-3 border-b border-ahs-border flex items-center justify-between">
+          <h3 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+            <i data-lucide="table" class="w-4 h-4 text-ahs-cyan"></i>
+            Tabela Geral de Atendimentos (<span id="table-row-count">0</span>)
+          </h3>
+          <span class="text-xs text-slate-400">Clique na linha para editar ou ver detalhes</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-ahs-cardLight/60 text-slate-300 border-b border-ahs-border uppercase text-[10px] tracking-wider font-semibold">
+                <th class="p-3">Cliente</th>
+                <th class="p-3">Contato / Endereço</th>
+                <th class="p-3">Categoria</th>
+                <th class="p-3">Demanda (A Prestar)</th>
+                <th class="p-3">Serviço Prestado</th>
+                <th class="p-3">Orçado</th>
+                <th class="p-3">A Cobrar</th>
+                <th class="p-3">Etapa Atual</th>
+                <th class="p-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="table-rows" class="divide-y divide-ahs-border/50 text-slate-300">
+              <!-- Linhas geradas dinamicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. VISUALIZAÇÃO DE RELATÓRIO E MÉTRICAS FINANCEIRAS -->
+    <div id="view-metrics" class="hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Distribuição por Categoria -->
+        <div class="bg-ahs-card border border-ahs-border rounded-xl p-5 shadow-lg">
+          <h3 class="font-bold text-sm text-white mb-3 flex items-center gap-2">
+            <i data-lucide="pie-chart" class="w-4 h-4 text-ahs-cyan"></i>
+            Distribuição por Segmento de Serviço
+          </h3>
+          <div class="space-y-3" id="metrics-category-breakdown">
+            <!-- Barra Ar Condicionado -->
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-ahs-cold flex items-center gap-1">❄️ Ar-Condicionado</span>
+                <span id="metric-ac-perc" class="font-bold">0% (0)</span>
+              </div>
+              <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                <div id="metric-ac-bar" class="h-full bg-ahs-cyan rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+            <!-- Barra Elétrica -->
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-ahs-gold flex items-center gap-1">⚡ Elétrica</span>
+                <span id="metric-el-perc" class="font-bold">0% (0)</span>
+              </div>
+              <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                <div id="metric-el-bar" class="h-full bg-ahs-gold rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+            <!-- Barra Ambos -->
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-emerald-400 flex items-center gap-1">❄️⚡ Integrado (Ambos)</span>
+                <span id="metric-both-perc" class="font-bold">0% (0)</span>
+              </div>
+              <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                <div id="metric-both-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Funil de Conversão das Sessões -->
+        <div class="bg-ahs-card border border-ahs-border rounded-xl p-5 shadow-lg">
+          <h3 class="font-bold text-sm text-white mb-3 flex items-center gap-2">
+            <i data-lucide="layers" class="w-4 h-4 text-ahs-gold"></i>
+            Volume por Etapa do Atendimento
+          </h3>
+          <div class="space-y-2 text-xs" id="metrics-session-funnel">
+            <!-- Gerado via JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Resumo Financeiro Consolidado -->
+      <div class="bg-ahs-card border border-ahs-border rounded-xl p-5 shadow-lg">
+        <h3 class="font-bold text-sm text-white mb-2 flex items-center gap-2">
+          <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-400"></i>
+          Fluxo de Faturamento da Empresa
+        </h3>
+        <p class="text-xs text-slate-400 mb-4">Acompanhe a taxa de recebimento dos serviços executados pela AHS Climatização e Soluções Elétricas.</p>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+          <div class="p-4 rounded-xl bg-slate-900 border border-ahs-border">
+            <span class="text-xs text-slate-400">Volume Total Passado</span>
+            <p id="metric-fin-orcado" class="text-xl font-black text-ahs-cyan mt-1">R$ 0,00</p>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900 border border-ahs-border">
+            <span class="text-xs text-slate-400">Taxa de Conversão em Pago</span>
+            <p id="metric-fin-taxa" class="text-xl font-black text-purple-400 mt-1">0%</p>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900 border border-ahs-border">
+            <span class="text-xs text-slate-400">Pendente de Liquidação</span>
+            <p id="metric-fin-pendente" class="text-xl font-black text-ahs-gold mt-1">R$ 0,00</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- BARRA DE NAVEGAÇÃO MOBILE INFERIOR (PWA MOBILE) -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#070a11]/95 backdrop-blur-md border-t border-ahs-border px-4 py-2 flex items-center justify-around">
+    <button onclick="app.setView('kanban')" id="nav-mobile-kanban" class="flex flex-col items-center text-ahs-cyan">
+      <i data-lucide="kanban" class="w-5 h-5"></i>
+      <span class="text-[10px] mt-0.5">Kanban</span>
+    </button>
+    
+    <button onclick="app.setView('table')" id="nav-mobile-table" class="flex flex-col items-center text-slate-400">
+      <i data-lucide="list" class="w-5 h-5"></i>
+      <span class="text-[10px] mt-0.5">Lista</span>
+    </button>
+
+    <!-- Botão Central Flutuante de Voz / Novo Atendimento -->
+    <button onclick="voiceAssistant.toggleListening()" class="relative -top-3 p-3.5 rounded-full bg-gradient-to-r from-ahs-cyan to-ahs-gold text-black shadow-xl border-2 border-[#070a11] active:scale-95">
+      <i data-lucide="mic" class="w-6 h-6 text-black"></i>
+    </button>
+
+    <button onclick="app.openModalNovo()" class="flex flex-col items-center text-slate-400">
+      <i data-lucide="plus-circle" class="w-5 h-5"></i>
+      <span class="text-[10px] mt-0.5">Novo</span>
+    </button>
+
+    <button onclick="app.setView('metrics')" id="nav-mobile-metrics" class="flex flex-col items-center text-slate-400">
+      <i data-lucide="pie-chart" class="w-5 h-5"></i>
+      <span class="text-[10px] mt-0.5">Resumo</span>
+    </button>
+  </nav>
+
+  <!-- BANNER DE INSTALAÇÃO DO PWA (QUANDO DISPONÍVEL NO NAVEGADOR / CELULAR) -->
+  <div id="pwa-install-banner" class="hidden fixed bottom-16 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-96 z-50 bg-gradient-to-r from-ahs-card to-slate-900 border border-ahs-cyan/50 rounded-2xl p-4 shadow-2xl animate-float">
+    <div class="flex items-start gap-3">
+      <div class="w-10 h-10 rounded-xl bg-black flex items-center justify-center border border-ahs-border overflow-hidden flex-shrink-0">
+        <img src="logo.jpg" alt="AHS App" class="w-full h-full object-cover">
+      </div>
+      <div class="flex-1">
+        <h4 class="font-bold text-xs text-white">Instalar App AHS Climatização</h4>
+        <p class="text-[11px] text-slate-300 mt-0.5">Instale no celular para usar em campo offline e com comando de voz imediato.</p>
+        <div class="flex items-center gap-2 mt-2.5">
+          <button onclick="app.installPWA()" class="px-3 py-1 rounded-lg text-xs font-bold bg-ahs-cyan text-black hover:bg-ahs-cyanHover">
+            Instalar Agora
+          </button>
+          <button onclick="document.getElementById('pwa-install-banner').remove()" class="text-xs text-slate-400 hover:text-white px-2 py-1">
+            Agora não
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CADASTRO / EDIÇÃO DE ATENDIMENTO -->
+  <div id="modal-atendimento" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-ahs-card border border-ahs-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden text-slate-100 animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Cabeçalho do Modal -->
+      <div class="p-4 border-b border-ahs-border flex items-center justify-between bg-ahs-cardLight/50">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-black border border-ahs-border flex items-center justify-center overflow-hidden">
+            <img src="logo.jpg" alt="AHS" class="w-full h-full object-cover">
+          </div>
+          <div>
+            <h3 id="modal-title" class="font-bold text-sm sm:text-base text-white">Novo Atendimento</h3>
+            <p class="text-[11px] text-slate-400" id="modal-subtitle">Preencha manualmente ou utilize o ditado por voz</p>
+          </div>
+        </div>
+        <button onclick="app.closeModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Formulário com Scroll -->
+      <form id="form-atendimento" onsubmit="app.saveAtendimento(event)" class="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs">
+        <input type="hidden" id="field-id">
+
+        <!-- 1. Nome do Cliente & Telefone / WhatsApp -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">
+              Nome do Cliente <span class="text-red-400">*</span>
+            </label>
+            <div class="relative">
+              <input type="text" id="field-cliente-nome" required placeholder="Ex: Roberto Silva" 
+                class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:outline-none focus:border-ahs-cyan pr-8">
+              <button type="button" onclick="voiceAssistant.dictateIntoField('field-cliente-nome')" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-ahs-cyan" title="Ditar nome">
+                <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">
+              Telefone / WhatsApp (com DDD)
+            </label>
+            <div class="relative">
+              <input type="text" id="field-telefone" placeholder="(11) 98765-4321" 
+                class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:outline-none focus:border-ahs-cyan pr-8">
+              <button type="button" onclick="voiceAssistant.dictateIntoField('field-telefone')" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-ahs-cyan" title="Ditar telefone">
+                <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Bairro / Endereço -->
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">
+            Bairro / Endereço do Serviço
+          </label>
+          <div class="relative">
+            <input type="text" id="field-bairro-endereco" placeholder="Ex: Av. Paulista, 1000 - Apto 42, Bela Vista" 
+              class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:outline-none focus:border-ahs-cyan pr-8">
+            <button type="button" onclick="voiceAssistant.dictateIntoField('field-bairro-endereco')" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-ahs-cyan" title="Ditar endereço">
+              <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. Categoria & Sessão Atual -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">
+              Categoria do Serviço <span class="text-red-400">*</span>
+            </label>
+            <select id="field-categoria" required onchange="app.updatePresetsForCategory(this.value)"
+              class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:outline-none focus:border-ahs-cyan">
+              <option value="Ar-Condicionado">❄️ Ar-Condicionado</option>
+              <option value="Elétrica">⚡ Elétrica</option>
+              <option value="Ambos">❄️⚡ Ambos (Ar + Elétrica)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">
+              Sessão / Etapa do Atendimento <span class="text-red-400">*</span>
+            </label>
+            <select id="field-sessao" required 
+              class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:outline-none focus:border-ahs-cyan">
+              <option value="Novo Contato">1. 📩 Novo Contato</option>
+              <option value="Orçamento Enviado">2. 📑 Orçamento Enviado</option>
+              <option value="Aguardando Aprovação">3. ⏳ Aguardando Aprovação</option>
+              <option value="Serviço Agendado">4. 📅 Serviço Agendado</option>
+              <option value="Serviço Prestado">5. 🔧 Serviço Prestado</option>
+              <option value="A Cobrar">6. 💰 A Cobrar</option>
+              <option value="Concluído / Pago">7. ✅ Concluído / Pago</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Sugestões Rápidas de Serviços Comuns da AHS -->
+        <div>
+          <span class="text-[11px] text-slate-400 block mb-1">Inserir termos frequentes com 1 clique:</span>
+          <div id="service-quick-tags" class="flex flex-wrap gap-1.5">
+            <!-- Tags rápidas injetadas dinamicamente -->
+          </div>
+        </div>
+
+        <!-- 4. Serviço a Ser Prestado (Demanda Inicial) -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-semibold text-slate-300">
+              Serviço a Ser Prestado (Demanda / O que precisa ser feito) <span class="text-red-400">*</span>
+            </label>
+            <button type="button" onclick="voiceAssistant.dictateIntoField('field-servico-a-prestar')" class="text-ahs-cyan flex items-center gap-1 hover:underline text-[11px]">
+              <i data-lucide="mic" class="w-3.5 h-3.5"></i> Ditar Demanda
+            </button>
+          </div>
+          <textarea id="field-servico-a-prestar" required rows="2" placeholder="Ex: Instalação de Split 12.000 BTUs Inverter com infraestrutura de cobre de 3 metros..." 
+            class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:outline-none focus:border-ahs-cyan resize-none"></textarea>
+        </div>
+
+        <!-- 5. Serviço Prestado (Relatório da Execução) -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-semibold text-slate-300">
+              Serviço Prestado (Relatório Técnico / O que foi executado)
+            </label>
+            <button type="button" onclick="voiceAssistant.dictateIntoField('field-servico-prestado')" class="text-ahs-gold flex items-center gap-1 hover:underline text-[11px]">
+              <i data-lucide="mic" class="w-3.5 h-3.5"></i> Ditar Execução
+            </button>
+          </div>
+          <textarea id="field-servico-prestado" rows="2" placeholder="Ex: Higienização completa com bactericida, teste de vácuo, reposição de 250g de gás R410A e verificação de dreno..." 
+            class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:outline-none focus:border-ahs-gold resize-none"></textarea>
+        </div>
+
+        <!-- 6. Valores: Orçamento Passado & Valor a Cobrar -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-950/70 p-3.5 rounded-xl border border-ahs-border/60">
+          <div>
+            <label class="block font-semibold text-ahs-cyan mb-1 flex items-center gap-1">
+              <i data-lucide="tag" class="w-3.5 h-3.5"></i> Valor Passado ao Cliente (R$)
+            </label>
+            <input type="number" step="0.01" min="0" id="field-valor-passado" placeholder="0.00" 
+              oninput="app.syncValores(this.value)"
+              class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-ahs-cyan font-bold focus:outline-none focus:border-ahs-cyan">
+            <span class="text-[10px] text-slate-500 mt-0.5 block">Orçamento formal da proposta</span>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-ahs-gold mb-1 flex items-center gap-1">
+              <i data-lucide="wallet" class="w-3.5 h-3.5"></i> Valor a Ser Cobrado (R$)
+            </label>
+            <input type="number" step="0.01" min="0" id="field-valor-a-cobrar" placeholder="0.00" 
+              class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-ahs-gold font-bold focus:outline-none focus:border-ahs-gold">
+            <span class="text-[10px] text-slate-500 mt-0.5 block">Saldo pendente a receber (Zero se pago)</span>
+          </div>
+        </div>
+
+        <!-- 7. Observações Gerais -->
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">
+            Observações Técnicas / Garantia / Condições
+          </label>
+          <input type="text" id="field-observacoes" placeholder="Ex: Garantia de 90 dias na mão de obra. Pagamento via PIX com 5% de desconto." 
+            class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:outline-none focus:border-ahs-cyan">
+        </div>
+
+        <!-- Histórico de Alterações (se em edição) -->
+        <div id="historico-container" class="hidden pt-2 border-t border-ahs-border/60">
+          <label class="font-semibold text-slate-400 block mb-1">Histórico de Alterações / Auditoria:</label>
+          <div id="historico-list" class="max-h-28 overflow-y-auto space-y-1 bg-slate-900/60 p-2 rounded-lg text-[10px] text-slate-400">
+            <!-- Itens de auditoria -->
+          </div>
+        </div>
+
+        <!-- Botões de Ação do Rodapé do Formulário -->
+        <div class="pt-3 border-t border-ahs-border flex items-center justify-between gap-2">
+          <button type="button" id="btn-delete-atendimento" onclick="app.deleteCurrentAtendimento()" 
+            class="hidden text-red-400 hover:text-red-300 hover:bg-red-500/10 px-3 py-2 rounded-lg font-medium transition-all flex items-center gap-1.5">
+            <i data-lucide="trash-2" class="w-4 h-4"></i> Excluir
+          </button>
+          
+          <div class="flex items-center gap-2 ml-auto">
+            <button type="button" onclick="app.closeModal()" 
+              class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium">
+              Cancelar
+            </button>
+            <button type="submit" 
+              class="px-5 py-2 rounded-lg bg-gradient-to-r from-ahs-cyan to-ahs-cyanHover text-black font-bold hover:opacity-95 shadow-lg active:scale-95 flex items-center gap-1.5">
+              <i data-lucide="save" class="w-4 h-4"></i> Salvar Atendimento
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFIGURAÇÃO DO SUPABASE & CONEXÃO NUVEM -->
+  <div id="modal-supabase" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="bg-ahs-card border border-ahs-border rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4 text-xs text-slate-200">
+      <div class="flex items-center justify-between border-b border-ahs-border pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="database" class="w-5 h-5 text-ahs-cyan"></i>
+          <h3 class="font-bold text-base text-white">Conexão em Nuvem — Supabase</h3>
+        </div>
+        <button onclick="app.closeSupabaseModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-slate-300 leading-relaxed">
+        Conecte seu projeto do <strong class="text-emerald-400">Supabase</strong> para sincronizar instantaneamente todos os orçamentos e atendimentos entre o celular e o computador em tempo real via PostgreSQL e WebSockets.
+      </p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Project URL (Supabase)</label>
+          <input type="url" id="config-supabase-url" placeholder="https://seu-projeto.supabase.co" 
+            class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white font-mono focus:border-ahs-cyan focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Anon Public Key</label>
+          <input type="password" id="config-supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
+            class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white font-mono focus:border-ahs-cyan focus:outline-none">
+        </div>
+      </div>
+
+      <div class="bg-slate-900/90 p-3 rounded-xl border border-ahs-border text-[11px] text-slate-400 space-y-1">
+        <p class="font-semibold text-ahs-gold flex items-center gap-1">
+          <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Schema SQL pronto para rodar
+        </p>
+        <p>O arquivo <code class="text-ahs-cyan">supabase_schema.sql</code> já está incluído no diretório com a tabela <code class="text-slate-200">atendimentos</code>, RLS seguro e canais Realtime.</p>
+      </div>
+
+      <div class="pt-2 flex items-center justify-between gap-2">
+        <button onclick="app.enableDemoMode()" class="px-3 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">
+          Modo Demonstração (Local)
+        </button>
+        <button onclick="app.saveSupabaseConfig()" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-black font-bold">
+          Salvar e Conectar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE AUTENTICAÇÃO (LOGIN / REGISTRO SUPABASE) -->
+  <div id="modal-auth" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="bg-ahs-card border border-ahs-border rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 text-xs text-slate-200">
+      <div class="text-center">
+        <div class="w-16 h-16 rounded-xl bg-black border border-ahs-border mx-auto flex items-center justify-center overflow-hidden mb-2">
+          <img src="logo.jpg" alt="AHS Climatização" class="w-full h-full object-cover">
+        </div>
+        <h3 class="font-black text-lg text-white">Acesso à Equipe AHS</h3>
+        <p class="text-slate-400 text-[11px]">Entre com sua conta para proteger e sincronizar os orçamentos</p>
+      </div>
+
+      <form id="form-auth" onsubmit="app.submitAuth(event)" class="space-y-3">
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">E-mail</label>
+          <input type="email" id="auth-email" required placeholder="tecnico@ahs.com.br" 
+            class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:border-ahs-cyan focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Senha</label>
+          <input type="password" id="auth-password" required placeholder="••••••••" 
+            class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:border-ahs-cyan focus:outline-none">
+        </div>
+
+        <button type="submit" id="btn-auth-submit" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-ahs-cyan to-ahs-cyanHover text-black font-bold shadow-md hover:opacity-95 mt-2">
+          Entrar no CRM
+        </button>
+
+        <div class="flex items-center justify-between text-[11px] pt-1">
+          <button type="button" onclick="app.toggleSignUpMode()" id="btn-toggle-signup" class="text-ahs-cyan hover:underline">
+            Criar nova conta de técnico
+          </button>
+          <button type="button" onclick="app.closeAuthModal()" class="text-slate-500 hover:text-slate-300">
+            Fechar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE VISUALIZAÇÃO E IMPRESSÃO DE ORÇAMENTO / ORDEM DE SERVIÇO -->
+  <div id="modal-print" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-white text-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
+      
+      <!-- Barra Superior de Controle do Documento -->
+      <div class="p-3 bg-slate-100 border-b flex items-center justify-between no-print">
+        <span class="font-bold text-xs text-slate-700 flex items-center gap-1.5">
+          <i data-lucide="printer" class="w-4 h-4 text-blue-600"></i> Orçamento & Ordem de Serviço AHS
+        </span>
+        <div class="flex items-center gap-2">
+          <button onclick="window.print()" class="px-3 py-1.5 rounded-lg bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 flex items-center gap-1">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i> Imprimir / Gerar PDF
+          </button>
+          <button onclick="app.closePrintModal()" class="p-1 rounded-lg hover:bg-slate-200 text-slate-600">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Área Oficial Imprimível (Ordem de Serviço) -->
+      <div id="print-area" class="p-6 sm:p-8 overflow-y-auto text-xs leading-relaxed space-y-5 bg-white text-black">
+        
+        <!-- Cabeçalho Oficial -->
+        <div class="flex items-center justify-between border-b-2 border-slate-900 pb-4">
+          <div class="flex items-center gap-3">
+            <img src="logo.jpg" alt="AHS Climatização" class="w-16 h-16 object-cover rounded-md border border-slate-300">
+            <div>
+              <h2 class="text-xl font-black tracking-tight text-slate-900">AHS CLIMATIZAÇÃO</h2>
+              <p class="text-xs font-bold text-blue-700 tracking-wide uppercase">Ar Condicionado & Soluções Elétricas</p>
+              <p class="text-[10px] text-slate-600">Instalação, Manutenção Preventiva, Limpeza e Elétrica Geral</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="px-2.5 py-1 bg-slate-900 text-white font-mono font-bold text-xs rounded" id="print-doc-number">OS #000</span>
+            <p class="text-[10px] text-slate-500 mt-1" id="print-doc-date">Data: 00/00/0000</p>
+          </div>
+        </div>
+
+        <!-- Dados do Cliente -->
+        <div class="bg-slate-50 p-3.5 rounded-lg border border-slate-200 grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <strong class="text-slate-600 block text-[10px] uppercase">Cliente:</strong>
+            <span id="print-cliente-nome" class="font-bold text-sm text-slate-900">-</span>
+          </div>
+          <div>
+            <strong class="text-slate-600 block text-[10px] uppercase">Telefone / WhatsApp:</strong>
+            <span id="print-cliente-telefone" class="font-medium text-slate-800">-</span>
+          </div>
+          <div class="col-span-2">
+            <strong class="text-slate-600 block text-[10px] uppercase">Endereço / Local:</strong>
+            <span id="print-cliente-endereco" class="text-slate-700">-</span>
+          </div>
+          <div>
+            <strong class="text-slate-600 block text-[10px] uppercase">Segmento:</strong>
+            <span id="print-categoria" class="font-bold text-blue-800">-</span>
+          </div>
+          <div>
+            <strong class="text-slate-600 block text-[10px] uppercase">Status da Ordem:</strong>
+            <span id="print-sessao" class="font-semibold text-slate-800">-</span>
+          </div>
+        </div>
+
+        <!-- Descrição Técnica dos Serviços -->
+        <div class="space-y-3">
+          <div>
+            <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-1">1. Demanda / Serviço Solicitado</h4>
+            <p id="print-servico-a-prestar" class="mt-1 text-slate-800 whitespace-pre-wrap bg-slate-50 p-2.5 rounded border border-slate-100"></p>
+          </div>
+
+          <div id="print-executado-container">
+            <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700 border-b pb-1">2. Relatório Técnico do Serviço Prestado</h4>
+            <p id="print-servico-prestado" class="mt-1 text-slate-800 whitespace-pre-wrap bg-slate-50 p-2.5 rounded border border-slate-100"></p>
+          </div>
+        </div>
+
+        <!-- Quadro de Valores e Condições de Pagamento -->
+        <div class="border-t-2 border-slate-300 pt-3">
+          <div class="flex justify-between items-center text-sm mb-1">
+            <span class="font-semibold text-slate-600">Valor Total do Orçamento:</span>
+            <span id="print-valor-passado" class="font-bold text-base text-slate-900">R$ 0,00</span>
+          </div>
+          <div class="flex justify-between items-center text-sm font-bold text-slate-900 bg-slate-100 p-2 rounded">
+            <span>Saldo a Cobrar / Pendente:</span>
+            <span id="print-valor-a-cobrar" class="text-base text-blue-900">R$ 0,00</span>
+          </div>
+        </div>
+
+        <!-- Observações e Garantia -->
+        <div class="text-[10px] text-slate-600 border-t border-slate-200 pt-3 space-y-1">
+          <p><strong>Observações:</strong> <span id="print-observacoes">Garantia padrão de 90 dias para serviços executados. Não cobre danos por intempéries ou mau uso.</span></p>
+        </div>
+
+        <!-- Assinaturas -->
+        <div class="pt-8 grid grid-cols-2 gap-8 text-center text-[10px]">
+          <div>
+            <div class="border-t border-slate-400 pt-1">AHS Climatização & Elétrica</div>
+            <span class="text-slate-500">Técnico Responsável</span>
+          </div>
+          <div>
+            <div class="border-t border-slate-400 pt-1">Assinatura do Cliente</div>
+            <span class="text-slate-500" id="print-cliente-assinatura">Ciente e de acordo</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL DE AJUDA DOS COMANDOS DE VOZ -->
+  <div id="modal-help" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="bg-ahs-card border border-ahs-border rounded-2xl shadow-2xl w-full max-w-lg p-5 sm:p-6 space-y-4 text-xs text-slate-200 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-ahs-border pb-3">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 rounded-lg bg-ahs-cyan/20 text-ahs-cyan">
+            <i data-lucide="mic" class="w-5 h-5"></i>
+          </div>
+          <h3 class="font-bold text-base text-white">Guia de Comandos de Voz AHS</h3>
+        </div>
+        <button onclick="app.closeHelpModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-slate-300 leading-relaxed">
+        Você pode criar clientes, registrar orçamentos e atualizar serviços falando naturalmente em português no celular ou no computador:
+      </p>
+
+      <div class="space-y-3">
+        <div class="p-3 bg-slate-900 rounded-xl border border-ahs-border">
+          <strong class="text-ahs-cyan font-bold block mb-1">1. Criar Atendimento Completo por Voz:</strong>
+          <p class="text-slate-300 italic">"Novo cliente Carlos Souza, ar condicionado, limpeza de split e troca de capacitor, orçamento 350 reais, a cobrar 350"</p>
+          <span class="text-[10px] text-slate-500 mt-1 block">O sistema detecta automaticamente o nome, categoria, serviço e valores!</span>
+        </div>
+
+        <div class="p-3 bg-slate-900 rounded-xl border border-ahs-border">
+          <strong class="text-ahs-gold font-bold block mb-1">2. Atendimento de Elétrica por Voz:</strong>
+          <p class="text-slate-300 italic">"Novo cliente condomínio Solar, elétrica, troca de disjuntor do quadro geral, orçamento 480 reais, telefone 11 99999-8888"</p>
+        </div>
+
+        <div class="p-3 bg-slate-900 rounded-xl border border-ahs-border">
+          <strong class="text-emerald-400 font-bold block mb-1">3. Ditado Técnico em Campo:</strong>
+          <p class="text-slate-300">Dentro de qualquer formulário, clique no ícone de microfone ao lado de "Serviço Prestado" ou "Demanda" para ditar o laudo técnico com as mãos livres.</p>
+        </div>
+
+        <div class="p-3 bg-slate-900 rounded-xl border border-ahs-border">
+          <strong class="text-purple-400 font-bold block mb-1">4. Navegação por Voz:</strong>
+          <ul class="list-disc list-inside text-slate-300 space-y-0.5 mt-1">
+            <li>"Buscar Marcos" (pesquisa por nome)</li>
+            <li>"Ver Ar Condicionado" (filtra por ar)</li>
+            <li>"Ver Elétrica" (filtra por elétrica)</li>
+            <li>"Ver Finanças" ou "Ver Métricas" (vai para os relatórios)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="pt-2 text-right">
+        <button onclick="app.closeHelpModal()" class="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700">
+          Entendi, vamos lá!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST DE NOTIFICAÇÃO FLUTUANTE -->
+  <div id="toast" class="fixed top-4 right-4 z-50 transform transition-all duration-300 translate-y-[-100px] opacity-0 pointer-events-none">
+    <div id="toast-content" class="px-4 py-2.5 rounded-xl text-xs font-semibold shadow-2xl flex items-center gap-2 border">
+      <i id="toast-icon" data-lucide="check" class="w-4 h-4"></i>
+      <span id="toast-message">Notificação</span>
+    </div>
+  </div>
+
+  <!-- SCRIPT PRINCIPAL DO CRM & INTEGRAÇÕES -->
+  <script>
+    // =========================================================================
+    // CONFIGURAÇÕES E ESTADO GLOBAL
+    // =========================================================================
+    const SESSOES = [
+      { id: 'Novo Contato', label: 'Novo Contato', icon: 'inbox', color: 'border-blue-500/60 bg-blue-500/10 text-blue-400' },
+      { id: 'Orçamento Enviado', label: 'Orçamento Enviado', icon: 'file-text', color: 'border-cyan-500/60 bg-cyan-500/10 text-cyan-400' },
+      { id: 'Aguardando Aprovação', label: 'Aguardando Aprovação', icon: 'clock', color: 'border-purple-500/60 bg-purple-500/10 text-purple-400' },
+      { id: 'Serviço Agendado', label: 'Serviço Agendado', icon: 'calendar', color: 'border-amber-500/60 bg-amber-500/10 text-amber-400' },
+      { id: 'Serviço Prestado', label: 'Serviço Prestado', icon: 'wrench', color: 'border-orange-500/60 bg-orange-500/10 text-orange-400' },
+      { id: 'A Cobrar', label: 'A Cobrar', icon: 'dollar-sign', color: 'border-yellow-500/60 bg-yellow-500/10 text-yellow-400' },
+      { id: 'Concluído / Pago', label: 'Concluído / Pago', icon: 'check-circle-2', color: 'border-emerald-500/60 bg-emerald-500/10 text-emerald-400' }
+    ];
+
+    const PRESETS = {
+      'Ar-Condicionado': [
+        'Instalação de Split',
+        'Higienização Completa',
+        'Carga de Gás R410A / R32',
+        'Troca de Capacitor',
+        'Desinstalação e Remanejamento',
+        'Manutenção Preventiva'
+      ],
+      'Elétrica': [
+        'Troca de Disjuntor / QGBT',
+        'Instalação de Tomadas e Interruptores',
+        'Revisão Elétrica Completa',
+        'Instalação de Luminárias / LED',
+        'Passagem de Cabeamento',
+        'Troca de Chuveiro / Fiação'
+      ],
+      'Ambos': [
+        'Instalação de Ar com Ponto Elétrico Dedicado',
+        'Manutenção Elétrica e Higienização de Ar',
+        'Quadro Elétrico + Climatização'
+      ]
+    };
+
+    // Dados de demonstração realistas iniciais (quando offline ou sem Supabase configurado)
+    const DEMO_DATA = [
+      {
+        id: '1',
+        cliente_nome: 'Dra. Camila Nogueira',
+        telefone: '11984210982',
+        categoria: 'Ar-Condicionado',
+        bairro_endereco: 'Moema - Alameda dos Arapanés, 420',
+        servico_a_prestar: 'Instalação de 2 Splits Inverter 12000 BTUs com furação serra copo e dreno embutido',
+        servico_prestado: 'Instalação executada, pressurização com nitrogênio e teste de vácuo em 400 microns',
+        valor_passado: 950.00,
+        valor_a_cobrar: 0.00,
+        sessao: 'Concluído / Pago',
+        observacoes: 'Garantia de 90 dias. Pago via PIX.',
+        historico_alteracoes: [{ data: new Date().toISOString(), acao: 'Criado', detalhe: 'Atendimento inicial' }],
+        created_at: new Date(Date.now() - 3600000 * 24).toISOString()
+      },
+      {
+        id: '2',
+        cliente_nome: 'Marcos Vinicius (Restaurante Vila)',
+        telefone: '11993451278',
+        categoria: 'Elétrica',
+        bairro_endereco: 'Pinheiros - Rua dos Pinheiros, 1120',
+        servico_a_prestar: 'Troca de disjuntor geral de 100A que está desarmando no horário de pico e balanceamento de fases',
+        servico_prestado: '',
+        valor_passado: 680.00,
+        valor_a_cobrar: 680.00,
+        sessao: 'Serviço Agendado',
+        observacoes: 'Agendado para quarta-feira 08:30 antes da abertura',
+        historico_alteracoes: [],
+        created_at: new Date(Date.now() - 3600000 * 6).toISOString()
+      },
+      {
+        id: '3',
+        cliente_nome: 'Eng. Fernando Siqueira',
+        telefone: '11971239988',
+        categoria: 'Ambos',
+        bairro_endereco: 'Vila Olímpia - Rua Gomes de Carvalho',
+        servico_a_prestar: 'Higienização de 4 aparelhos split + revisão de disjuntores do circuito de ar condicionado',
+        servico_prestado: '',
+        valor_passado: 1200.00,
+        valor_a_cobrar: 1200.00,
+        sessao: 'Orçamento Enviado',
+        observacoes: 'Enviada proposta por WhatsApp com detalhes técnicos',
+        historico_alteracoes: [],
+        created_at: new Date().toISOString()
+      }
+    ];
+
+    // =========================================================================
+    // GERENCIADOR SUPABASE & BANCO DE DADOS
+    // =========================================================================
+    class SupabaseManager {
+      constructor() {
+        this.client = null;
+        this.realtimeChannel = null;
+        this.isDemo = false;
+        this.currentUser = null;
+      }
+
+      init() {
+        const storedUrl = localStorage.getItem('ahs_supabase_url') || '';
+        const storedKey = localStorage.getItem('ahs_supabase_key') || '';
+
+        if (storedUrl && storedKey && window.supabase) {
+          try {
+            this.client = window.supabase.createClient(storedUrl, storedKey, {
+              auth: {
+                persistSession: true,
+                autoRefreshToken: true
+              }
+            });
+            this.isDemo = false;
+            this.checkSession();
+            this.setupRealtime();
+            this.updateStatusBadge(true, 'Supabase Conectado');
+          } catch (e) {
+            console.error('Erro ao conectar Supabase:', e);
+            this.setDemoMode();
+          }
+        } else {
+          this.setDemoMode();
+        }
+      }
+
+      setDemoMode() {
+        this.isDemo = true;
+        this.updateStatusBadge(false, 'Modo Demo (Local)');
+      }
+
+      async checkSession() {
+        if (!this.client) return;
+        const { data: { session } } = await this.client.auth.getSession();
+        if (session && session.user) {
+          this.currentUser = session.user;
+          app.updateUserUI(session.user.email);
+        } else {
+          this.currentUser = null;
+          app.updateUserUI('Operador AHS (Offline/Demo)');
+        }
+      }
+
+      setupRealtime() {
+        if (!this.client) return;
+        if (this.realtimeChannel) {
+          this.client.removeChannel(this.realtimeChannel);
+        }
+
+        this.realtimeChannel = this.client
+          .channel('ahs_atendimentos_realtime')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'atendimentos' }, (payload) => {
+            console.log('Realtime update recebido:', payload);
+            app.handleRealtimeChange(payload);
+          })
+          .subscribe((status) => {
+            console.log('Status Realtime:', status);
+          });
+      }
+
+      updateStatusBadge(connected, text) {
+        const dot = document.getElementById('supabase-indicator-dot');
+        const label = document.getElementById('supabase-indicator-label');
+        if (dot && label) {
+          dot.className = `w-2 h-2 rounded-full ${connected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`;
+          label.textContent = text;
+        }
+      }
+
+      async fetchAtendimentos() {
+        if (this.isDemo || !this.client) {
+          const local = localStorage.getItem('ahs_local_atendimentos');
+          return local ? JSON.parse(local) : DEMO_DATA;
+        }
+
+        const { data, error } = await this.client
+          .from('atendimentos')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Erro ao carregar atendimentos do Supabase:', error);
+          app.showToast('Erro ao carregar do Supabase. Usando cópia local.', 'error');
+          const local = localStorage.getItem('ahs_local_atendimentos');
+          return local ? JSON.parse(local) : DEMO_DATA;
+        }
+        return data || [];
+      }
+
+      async upsertAtendimento(item) {
+        if (this.isDemo || !this.client) {
+          let list = await this.fetchAtendimentos();
+          if (item.id) {
+            list = list.map(x => x.id === item.id ? { ...x, ...item, updated_at: new Date().toISOString() } : x);
+          } else {
+            item.id = 'demo-' + Date.now();
+            item.created_at = new Date().toISOString();
+            item.updated_at = item.created_at;
+            list.unshift(item);
+          }
+          localStorage.setItem('ahs_local_atendimentos', JSON.stringify(list));
+          return item;
+        }
+
+        // Supabase DB Upsert
+        const payload = { ...item };
+        if (this.currentUser && !payload.user_id) {
+          payload.user_id = this.currentUser.id;
+        }
+        if (!payload.id) delete payload.id; // Deixar Postgres gerar UUID
+
+        const { data, error } = await this.client
+          .from('atendimentos')
+          .upsert(payload)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
+
+      async deleteAtendimento(id) {
+        if (this.isDemo || !this.client) {
+          let list = await this.fetchAtendimentos();
+          list = list.filter(x => x.id !== id);
+          localStorage.setItem('ahs_local_atendimentos', JSON.stringify(list));
+          return true;
+        }
+
+        const { error } = await this.client
+          .from('atendimentos')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+        return true;
+      }
+    }
+
+    // =========================================================================
+    // ASSISTENTE DE VOZ (WEB SPEECH API - PT-BR) COM PROCESSAMENTO INTELIGENTE
+    // =========================================================================
+    class VoiceAssistant {
+      constructor() {
+        this.recognition = null;
+        this.isListening = false;
+        this.targetField = null;
+        this.initSpeech();
+      }
+
+      initSpeech() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          console.warn('Web Speech API não suportada neste navegador.');
+          return;
+        }
+
+        this.recognition = new SpeechRecognition();
+        this.recognition.lang = 'pt-BR';
+        this.recognition.continuous = false;
+        this.recognition.interimResults = true;
+
+        this.recognition.onstart = () => {
+          this.isListening = true;
+          this.updateVoiceUI(true, 'Ouvindo... Fale agora.');
+        };
+
+        this.recognition.onresult = (event) => {
+          let transcript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            transcript += event.results[i][0].transcript;
+          }
+          
+          document.getElementById('voice-transcript-preview').textContent = `"${transcript}"`;
+
+          if (event.results[0].isFinal) {
+            this.handleFinalTranscript(transcript.trim());
+          }
+        };
+
+        this.recognition.onerror = (event) => {
+          console.error('Erro de reconhecimento de voz:', event.error);
+          this.stop();
+          app.showToast('Microfone: ' + event.error, 'info');
+        };
+
+        this.recognition.onend = () => {
+          this.isListening = false;
+          this.updateVoiceUI(false, 'Assistente de Voz AHS (Pronto)');
+        };
+      }
+
+      toggleListening() {
+        if (!this.recognition) {
+          app.showToast('Reconhecimento de voz não suportado neste navegador.', 'error');
+          return;
+        }
+
+        if (this.isListening) {
+          this.stop();
+        } else {
+          this.targetField = null;
+          try {
+            this.recognition.start();
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+
+      dictateIntoField(fieldId) {
+        if (!this.recognition) {
+          app.showToast('Reconhecimento de voz não suportado.', 'error');
+          return;
+        }
+        this.targetField = fieldId;
+        const field = document.getElementById(fieldId);
+        if (field) field.focus();
+        try {
+          this.recognition.start();
+          app.showToast('Ditando no campo...', 'info');
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      stop() {
+        if (this.recognition && this.isListening) {
+          this.recognition.stop();
+        }
+        this.isListening = false;
+        this.updateVoiceUI(false, 'Assistente de Voz AHS (Pronto)');
+      }
+
+      updateVoiceUI(listening, statusText) {
+        const ring = document.getElementById('voice-pulse-ring');
+        const dot = document.getElementById('voice-live-dot');
+        const text = document.getElementById('voice-status-text');
+        const icon = document.getElementById('voice-icon-main');
+
+        if (text) text.textContent = statusText;
+        if (ring) ring.className = listening ? 'absolute inset-0 rounded-full border-2 border-ahs-cyan recording-wave block' : 'hidden';
+        if (dot) dot.style.display = listening ? 'inline-block' : 'none';
+        if (icon) icon.className = listening ? 'w-5 h-5 text-red-500 animate-bounce' : 'w-5 h-5 text-black';
+      }
+
+      // Processador Inteligente de Comandos em Linguagem Natural (NLP)
+      handleFinalTranscript(rawText) {
+        const text = rawText.toLowerCase();
+        console.log('Texto capturado por voz:', rawText);
+
+        // Se estiver ditando diretamente em um campo aberto:
+        if (this.targetField) {
+          const input = document.getElementById(this.targetField);
+          if (input) {
+            const currentVal = input.value;
+            input.value = currentVal ? `${currentVal} ${rawText}` : rawText;
+            app.showToast('Texto inserido via voz!', 'success');
+          }
+          this.targetField = null;
+          return;
+        }
+
+        // Comandos de Navegação e Filtros
+        if (text.startsWith('buscar ') || text.startsWith('pesquisar ')) {
+          const termo = rawText.replace(/^(buscar|pesquisar)\s+/i, '').trim();
+          document.getElementById('search-input').value = termo;
+          app.filterSearch(termo);
+          this.speak(`Buscando por ${termo}`);
+          return;
+        }
+
+        if (text.includes('ar condicionado') && (text.startsWith('filtrar') || text.startsWith('ver '))) {
+          document.getElementById('filter-categoria').value = 'Ar-Condicionado';
+          app.filterCategoria('Ar-Condicionado');
+          this.speak('Filtrando por ar-condicionado');
+          return;
+        }
+
+        if (text.includes('elétrica') && (text.startsWith('filtrar') || text.startsWith('ver '))) {
+          document.getElementById('filter-categoria').value = 'Elétrica';
+          app.filterCategoria('Elétrica');
+          this.speak('Filtrando por elétrica');
+          return;
+        }
+
+        if (text.includes('tabela') || text.includes('lista')) {
+          app.setView('table');
+          this.speak('Exibindo lista');
+          return;
+        }
+
+        if (text.includes('kanban')) {
+          app.setView('kanban');
+          this.speak('Exibindo kanban');
+          return;
+        }
+
+        if (text.includes('finanças') || text.includes('métricas') || text.includes('relatório')) {
+          app.setView('metrics');
+          this.speak('Exibindo relatório financeiro');
+          return;
+        }
+
+        // Extração Inteligente de Criação de Novo Atendimento
+        // Exemplo: "Novo cliente Marcos Paulo ar condicionado instalação de split orçamento 350 reais a cobrar 350"
+        if (text.includes('novo') || text.includes('cliente') || text.includes('atendimento') || text.includes('orçamento')) {
+          this.parseAndOpenNovoAtendimento(rawText);
+        } else {
+          app.showToast(`Comando ouvido: "${rawText}"`, 'info');
+        }
+      }
+
+      parseAndOpenNovoAtendimento(text) {
+        let nome = '';
+        let telefone = '';
+        let categoria = 'Ar-Condicionado';
+        let servico = '';
+        let orcamento = 0;
+        let aCobrar = 0;
+        let bairro = '';
+
+        // Detecção de Categoria
+        const lower = text.toLowerCase();
+        if (lower.includes('elétrica') && lower.includes('ar')) {
+          categoria = 'Ambos';
+        } else if (lower.includes('elétrica') || lower.includes('eletrica') || lower.includes('disjuntor') || lower.includes('quadro')) {
+          categoria = 'Elétrica';
+        } else {
+          categoria = 'Ar-Condicionado';
+        }
+
+        // Extração de Nome
+        const nomeMatch = text.match(/(?:cliente|nome|para)\s+([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][a-záéíóúâêîôûãõç]+(?:\s+[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][a-záéíóúâêîôûãõç]+)*)/i);
+        if (nomeMatch) {
+          nome = nomeMatch[1].trim();
+        }
+
+        // Extração de Telefone
+        const foneMatch = text.match(/(?:telefone|whatsapp|fone|celular)?\s*\(?(\d{2})\)?\s*(\d{4,5})[-.\s]?(\d{4})/i);
+        if (foneMatch) {
+          telefone = `(${foneMatch[1]}) ${foneMatch[2]}-${foneMatch[3]}`;
+        }
+
+        // Extração de Valores Numéricos (ex: "350 reais", "R$ 450", "orçamento 500")
+        const valores = [];
+        const regexValor = /(?:orçamento|valor|cobrar|passado|de)?\s*(?:r\$)?\s*(\d+(?:[.,]\d{1,2})?)\s*(?:reais)?/gi;
+        let m;
+        while ((m = regexValor.exec(text)) !== null) {
+          const num = parseFloat(m[1].replace(',', '.'));
+          if (!isNaN(num) && num > 0) {
+            valores.push(num);
+          }
+        }
+
+        if (valores.length >= 1) {
+          orcamento = valores[0];
+          aCobrar = valores.length >= 2 ? valores[1] : orcamento;
+        }
+
+        // Extração de Serviço / Demanda
+        servico = text
+          .replace(/novo\s+(?:cliente|atendimento)?/gi, '')
+          .replace(/(?:cliente|para)\s+([A-Za-zÀ-ÖØ-öø-ÿ\s]+)/gi, '')
+          .replace(/(?:orçamento|valor|reais|a cobrar).*/gi, '')
+          .trim();
+
+        if (!servico || servico.length < 3) {
+          servico = categoria === 'Ar-Condicionado' ? 'Instalação / Higienização de Ar Condicionado' : 'Revisão Elétrica e Manutenção';
+        }
+
+        app.openModalNovo({
+          cliente_nome: nome || 'Cliente via Voz',
+          telefone: telefone,
+          categoria: categoria,
+          servico_a_prestar: rawCapitalize(servico),
+          valor_passado: orcamento,
+          valor_a_cobrar: aCobrar,
+          bairro_endereco: bairro,
+          sessao: 'Novo Contato'
+        });
+
+        this.speak('Atendimento preenchido por voz. Confira e salve!');
+        app.showToast('Campos preenchidos por comando de voz!', 'success');
+      }
+
+      speak(text) {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'pt-BR';
+          utterance.rate = 1.05;
+          window.speechSynthesis.speak(utterance);
+        }
+      }
+    }
+
+    function rawCapitalize(str) {
+      if (!str) return '';
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    // =========================================================================
+    // CONTROLADOR DA APLICAÇÃO (UI, KANBAN, MODAIS, ORÇAMENTO E WHATSAPP)
+    // =========================================================================
+    class AppController {
+      constructor() {
+        this.atendimentos = [];
+        this.currentView = 'kanban';
+        this.filterText = '';
+        this.currentCategory = 'todos';
+        this.deferredPrompt = null;
+        this.editingItem = null;
+      }
+
+      async init() {
+        // Inicializar Supabase & Realtime
+        supabaseManager.init();
+
+        // Registrar Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('./sw.js').then((reg) => {
+            console.log('PWA ServiceWorker registrado com sucesso:', reg.scope);
+          }).catch(err => console.log('Falha ao registrar SW:', err));
+        }
+
+        // Capturar evento de instalação do PWA
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          this.deferredPrompt = e;
+          const banner = document.getElementById('pwa-install-banner');
+          if (banner) banner.classList.remove('hidden');
+        });
+
+        // Carregar atendimentos
+        await this.loadData();
+        this.render();
+        this.updatePresetsForCategory('Ar-Condicionado');
+        lucide.createIcons();
+      }
+
+      async loadData() {
+        this.atendimentos = await supabaseManager.fetchAtendimentos();
+        this.updateStats();
+      }
+
+      handleRealtimeChange(payload) {
+        const { eventType, new: newRec, old: oldRec } = payload;
+        if (eventType === 'INSERT') {
+          this.atendimentos.unshift(newRec);
+          this.showToast(`Novo atendimento: ${newRec.cliente_nome}`, 'success');
+        } else if (eventType === 'UPDATE') {
+          this.atendimentos = this.atendimentos.map(item => item.id === newRec.id ? newRec : item);
+          this.showToast(`Atendimento atualizado: ${newRec.cliente_nome}`, 'info');
+        } else if (eventType === 'DELETE') {
+          this.atendimentos = this.atendimentos.filter(item => item.id !== oldRec.id);
+          this.showToast('Atendimento excluído remotamente', 'info');
+        }
+        this.updateStats();
+        this.render();
+      }
+
+      render() {
+        if (this.currentView === 'kanban') {
+          this.renderKanban();
+        } else if (this.currentView === 'table') {
+          this.renderTable();
+        } else if (this.currentView === 'metrics') {
+          this.renderMetrics();
+        }
+        this.updateStats();
+        lucide.createIcons();
+      }
+
+      getFilteredList() {
+        return this.atendimentos.filter(item => {
+          const matchCat = this.currentCategory === 'todos' || item.categoria === this.currentCategory;
+          const query = this.filterText.toLowerCase();
+          const matchText = !query || 
+            (item.cliente_nome && item.cliente_nome.toLowerCase().includes(query)) ||
+            (item.telefone && item.telefone.toLowerCase().includes(query)) ||
+            (item.servico_a_prestar && item.servico_a_prestar.toLowerCase().includes(query)) ||
+            (item.servico_prestado && item.servico_prestado.toLowerCase().includes(query)) ||
+            (item.bairro_endereco && item.bairro_endereco.toLowerCase().includes(query));
+          return matchCat && matchText;
+        });
+      }
+
+      // ========================== RENDER KANBAN ============================
+      renderKanban() {
+        const container = document.getElementById('kanban-columns-container');
+        if (!container) return;
+
+        const filtered = this.getFilteredList();
+
+        container.innerHTML = SESSOES.map(sessao => {
+          const itensDaSessao = filtered.filter(x => x.sessao === sessao.id);
+          const totalValor = itensDaSessao.reduce((acc, x) => acc + (parseFloat(x.valor_passado) || 0), 0);
+          const totalACobrar = itensDaSessao.reduce((acc, x) => acc + (parseFloat(x.valor_a_cobrar) || 0), 0);
+
+          return `
+            <div class="w-[300px] flex-shrink-0 bg-ahs-card/80 border border-ahs-border rounded-xl flex flex-col max-h-[78vh] shadow-lg">
+              
+              <!-- Cabeçalho da Coluna -->
+              <div class="p-3 border-b border-ahs-border flex items-center justify-between bg-ahs-cardLight/30 rounded-t-xl">
+                <div class="flex items-center gap-2">
+                  <div class="p-1 rounded-md ${sessao.color}">
+                    <i data-lucide="${sessao.icon}" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-xs text-white">${sessao.label}</h4>
+                    <span class="text-[10px] text-slate-400">Total: R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                  ${itensDaSessao.length}
+                </span>
+              </div>
+
+              <!-- Lista de Cards com Scroll Interno -->
+              <div class="p-2 space-y-2.5 overflow-y-auto flex-1 min-h-[140px]" 
+                ondragover="event.preventDefault()" 
+                ondrop="app.handleDrop(event, '${sessao.id}')">
+                
+                ${itensDaSessao.length === 0 ? `
+                  <div class="h-28 border border-dashed border-ahs-border/60 rounded-xl flex items-center justify-center text-slate-500 text-xs text-center p-3">
+                    Nenhum atendimento nesta etapa
+                  </div>
+                ` : itensDaSessao.map(item => this.renderCardHTML(item)).join('')}
+
+              </div>
+
+              <!-- Rodapé da Coluna com Botão Rápido -->
+              <div class="p-2 border-t border-ahs-border/40">
+                <button onclick="app.openModalNovo({ sessao: '${sessao.id}' })" class="w-full py-1.5 rounded-lg border border-dashed border-ahs-border hover:border-ahs-cyan/50 text-[11px] text-slate-400 hover:text-white flex items-center justify-center gap-1 transition-all">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i> Novo nesta etapa
+                </button>
+              </div>
+
+            </div>
+          `;
+        }).join('');
+      }
+
+      renderCardHTML(item) {
+        const isAr = item.categoria === 'Ar-Condicionado';
+        const isElet = item.categoria === 'Elétrica';
+        const catBadge = isAr 
+          ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-950 text-ahs-cyan border border-cyan-800/60 flex items-center gap-1">❄️ Ar-Condicionado</span>'
+          : isElet
+          ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-ahs-gold border border-amber-800/60 flex items-center gap-1">⚡ Elétrica</span>'
+          : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/60 flex items-center gap-1">❄️⚡ Ambos</span>';
+
+        return `
+          <div draggable="true" ondragstart="app.handleDragStart(event, '${item.id}')"
+            class="bg-slate-900 border border-ahs-border hover:border-slate-500 rounded-xl p-3 shadow-md hover:shadow-xl transition-all cursor-grab active:cursor-grabbing group relative">
+            
+            <!-- Linha 1: Nome do Cliente e Categoria -->
+            <div class="flex items-start justify-between gap-1 mb-1.5">
+              <h5 class="font-extrabold text-xs text-white hover:text-ahs-cyan cursor-pointer truncate" onclick="app.editAtendimento('${item.id}')">
+                ${item.cliente_nome}
+              </h5>
+              ${catBadge}
+            </div>
+
+            <!-- Demanda Inicial -->
+            <p class="text-[11px] text-slate-300 line-clamp-2 mb-2 leading-snug">
+              ${item.servico_a_prestar}
+            </p>
+
+            ${item.servico_prestado ? `
+              <div class="mb-2 p-1.5 rounded bg-slate-950/80 border border-slate-800 text-[10px] text-emerald-300/90 flex items-start gap-1">
+                <i data-lucide="check" class="w-3 h-3 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+                <span class="line-clamp-1">${item.servico_prestado}</span>
+              </div>
+            ` : ''}
+
+            <!-- Valores -->
+            <div class="flex items-center justify-between text-[11px] pt-1.5 border-t border-ahs-border/60">
+              <div>
+                <span class="text-[9px] text-slate-500 block">Orçamento:</span>
+                <span class="font-bold text-ahs-cyan">R$ ${(parseFloat(item.valor_passado) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div class="text-right">
+                <span class="text-[9px] text-slate-500 block">A Cobrar:</span>
+                <span class="font-bold ${parseFloat(item.valor_a_cobrar) > 0 ? 'text-ahs-gold' : 'text-emerald-400'}">
+                  R$ ${(parseFloat(item.valor_a_cobrar) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+
+            <!-- Botões de Ação Rápida: WhatsApp, Imprimir e Mudar Etapa -->
+            <div class="flex items-center justify-between gap-1 mt-2.5 pt-2 border-t border-ahs-border/40 text-[11px]">
+              <div class="flex items-center gap-1">
+                ${item.telefone ? `
+                  <button onclick="app.sendWhatsApp('${item.id}')" title="Enviar WhatsApp" class="p-1 rounded bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30">
+                    <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                  </button>
+                ` : ''}
+                <button onclick="app.openPrintModal('${item.id}')" title="Gerar Orçamento / OS" class="p-1 rounded bg-slate-800 text-slate-300 hover:text-white">
+                  <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="app.editAtendimento('${item.id}')" title="Editar" class="p-1 rounded bg-slate-800 text-slate-300 hover:text-white">
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+
+              <!-- Seletor Rápido de Etapa -->
+              <select onchange="app.moveSessao('${item.id}', this.value)" 
+                class="bg-slate-950 border border-slate-700 text-[10px] rounded px-1.5 py-0.5 text-slate-300 focus:outline-none">
+                ${SESSOES.map(s => `
+                  <option value="${s.id}" ${s.id === item.sessao ? 'selected' : ''}>${s.label}</option>
+                `).join('')}
+              </select>
+            </div>
+
+          </div>
+        `;
+      }
+
+      // Drag and Drop do Kanban
+      handleDragStart(e, id) {
+        e.dataTransfer.setData('text/plain', id);
+      }
+
+      async handleDrop(e, novaSessao) {
+        e.preventDefault();
+        const id = e.dataTransfer.getData('text/plain');
+        if (id) {
+          await this.moveSessao(id, novaSessao);
+        }
+      }
+
+      async moveSessao(id, novaSessao) {
+        const item = this.atendimentos.find(x => x.id === id);
+        if (!item || item.sessao === novaSessao) return;
+
+        const antiga = item.sessao;
+        item.sessao = novaSessao;
+
+        // Se passar para 'Concluído / Pago', zera o a cobrar
+        if (novaSessao === 'Concluído / Pago' && parseFloat(item.valor_a_cobrar) > 0) {
+          item.valor_a_cobrar = 0;
+          confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
+        }
+
+        // Registrar no histórico
+        if (!item.historico_alteracoes) item.historico_alteracoes = [];
+        item.historico_alteracoes.push({
+          data: new Date().toISOString(),
+          acao: 'Mudança de Etapa',
+          detalhe: `De "${antiga}" para "${novaSessao}"`
+        });
+
+        try {
+          await supabaseManager.upsertAtendimento(item);
+          this.showToast(`Etapa atualizada para: ${novaSessao}`, 'success');
+          this.render();
+        } catch (e) {
+          console.error(e);
+          this.showToast('Erro ao atualizar etapa no Supabase.', 'error');
+        }
+      }
+
+      // ========================== RENDER TABELA ============================
+      renderTable() {
+        const tbody = document.getElementById('table-rows');
+        const count = document.getElementById('table-row-count');
+        if (!tbody) return;
+
+        const filtered = this.getFilteredList();
+        if (count) count.textContent = filtered.length;
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-500">Nenhum atendimento localizado com os filtros atuais.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = filtered.map(item => `
+          <tr class="hover:bg-ahs-cardLight/40 transition-colors">
+            <td class="p-3 font-bold text-white cursor-pointer hover:text-ahs-cyan" onclick="app.editAtendimento('${item.id}')">
+              ${item.cliente_nome}
+            </td>
+            <td class="p-3 text-slate-400">
+              <div>${item.telefone || '-'}</div>
+              <div class="text-[10px] text-slate-500">${item.bairro_endereco || ''}</div>
+            </td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${item.categoria === 'Ar-Condicionado' ? 'bg-cyan-950 text-ahs-cyan' : 'bg-amber-950 text-ahs-gold'}">
+                ${item.categoria}
+              </span>
+            </td>
+            <td class="p-3 text-slate-300 max-w-xs truncate" title="${item.servico_a_prestar}">
+              ${item.servico_a_prestar}
+            </td>
+            <td class="p-3 text-slate-400 max-w-xs truncate" title="${item.servico_prestado}">
+              ${item.servico_prestado || '<span class="text-slate-600">Pendente</span>'}
+            </td>
+            <td class="p-3 font-semibold text-ahs-cyan">
+              R$ ${(parseFloat(item.valor_passado) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </td>
+            <td class="p-3 font-semibold ${parseFloat(item.valor_a_cobrar) > 0 ? 'text-ahs-gold' : 'text-emerald-400'}">
+              R$ ${(parseFloat(item.valor_a_cobrar) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-200 border border-slate-700">
+                ${item.sessao}
+              </span>
+            </td>
+            <td class="p-3 text-right space-x-1 whitespace-nowrap">
+              ${item.telefone ? `
+                <button onclick="app.sendWhatsApp('${item.id}')" title="WhatsApp" class="p-1 rounded bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30">
+                  <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                </button>
+              ` : ''}
+              <button onclick="app.openPrintModal('${item.id}')" title="Imprimir" class="p-1 rounded bg-slate-800 text-slate-300 hover:text-white">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="app.editAtendimento('${item.id}')" title="Editar" class="p-1 rounded bg-slate-800 text-slate-300 hover:text-white">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      // ========================== RENDER MÉTRICAS ==========================
+      renderMetrics() {
+        const total = this.atendimentos.length;
+        if (total === 0) return;
+
+        const countAC = this.atendimentos.filter(x => x.categoria === 'Ar-Condicionado').length;
+        const countEL = this.atendimentos.filter(x => x.categoria === 'Elétrica').length;
+        const countAmbos = this.atendimentos.filter(x => x.categoria === 'Ambos').length;
+
+        const percAC = Math.round((countAC / total) * 100);
+        const percEL = Math.round((countEL / total) * 100);
+        const percAmbos = Math.round((countAmbos / total) * 100);
+
+        document.getElementById('metric-ac-perc').textContent = `${percAC}% (${countAC})`;
+        document.getElementById('metric-ac-bar').style.width = `${percAC}%`;
+
+        document.getElementById('metric-el-perc').textContent = `${percEL}% (${countEL})`;
+        document.getElementById('metric-el-bar').style.width = `${percEL}%`;
+
+        document.getElementById('metric-both-perc').textContent = `${percAmbos}% (${countAmbos})`;
+        document.getElementById('metric-both-bar').style.width = `${percAmbos}%`;
+
+        // Funil
+        const funnelContainer = document.getElementById('metrics-session-funnel');
+        if (funnelContainer) {
+          funnelContainer.innerHTML = SESSOES.map(s => {
+            const qtd = this.atendimentos.filter(x => x.sessao === s.id).length;
+            const p = Math.round((qtd / total) * 100);
+            return `
+              <div>
+                <div class="flex justify-between mb-0.5">
+                  <span class="text-slate-300">${s.label}</span>
+                  <span class="font-bold text-white">${qtd} (${p}%)</span>
+                </div>
+                <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div class="h-full bg-slate-400 rounded-full" style="width: ${p}%"></div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // Financeiro consolidado
+        const totalOrcado = this.atendimentos.reduce((a, b) => a + (parseFloat(b.valor_passado) || 0), 0);
+        const totalPendente = this.atendimentos.reduce((a, b) => a + (parseFloat(b.valor_a_cobrar) || 0), 0);
+        const totalPago = totalOrcado - totalPendente;
+        const taxa = totalOrcado > 0 ? Math.round((totalPago / totalOrcado) * 100) : 0;
+
+        document.getElementById('metric-fin-orcado').textContent = `R$ ${totalOrcado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        document.getElementById('metric-fin-pendente').textContent = `R$ ${totalPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        document.getElementById('metric-fin-taxa').textContent = `${taxa}%`;
+      }
+
+      updateStats() {
+        const total = this.atendimentos.length;
+        const countAC = this.atendimentos.filter(x => x.categoria === 'Ar-Condicionado').length;
+        const countEL = this.atendimentos.filter(x => x.categoria === 'Elétrica').length;
+
+        const totalOrcado = this.atendimentos.reduce((acc, x) => acc + (parseFloat(x.valor_passado) || 0), 0);
+        const totalPendente = this.atendimentos.reduce((acc, x) => acc + (parseFloat(x.valor_a_cobrar) || 0), 0);
+        const totalPago = this.atendimentos.filter(x => x.sessao === 'Concluído / Pago')
+          .reduce((acc, x) => acc + (parseFloat(x.valor_passado) || 0), 0);
+
+        const elCount = document.getElementById('stat-total-count');
+        const elCountAC = document.getElementById('stat-count-ac');
+        const elCountEL = document.getElementById('stat-count-el');
+        const elOrcado = document.getElementById('stat-total-orcado');
+        const elPendente = document.getElementById('stat-total-pendente');
+        const elPago = document.getElementById('stat-total-pago');
+
+        if (elCount) elCount.textContent = total;
+        if (elCountAC) elCountAC.textContent = `${countAC} Ar`;
+        if (elCountEL) elCountEL.textContent = `${countEL} Elét`;
+        if (elOrcado) elOrcado.textContent = `R$ ${totalOrcado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        if (elPendente) elPendente.textContent = `R$ ${totalPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        if (elPago) elPago.textContent = `R$ ${totalPago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      }
+
+      // ========================== CONTROLE DE MODAL ========================
+      openModalNovo(preset = {}) {
+        this.editingItem = null;
+        document.getElementById('form-atendimento').reset();
+        document.getElementById('field-id').value = '';
+        document.getElementById('modal-title').textContent = 'Novo Atendimento';
+        document.getElementById('modal-subtitle').textContent = 'Preencha manualmente ou utilize o ditado por voz';
+        document.getElementById('btn-delete-atendimento').classList.add('hidden');
+        document.getElementById('historico-container').classList.add('hidden');
+
+        // Valores default
+        document.getElementById('field-categoria').value = preset.categoria || 'Ar-Condicionado';
+        document.getElementById('field-sessao').value = preset.sessao || 'Novo Contato';
+        document.getElementById('field-cliente-nome').value = preset.cliente_nome || '';
+        document.getElementById('field-telefone').value = preset.telefone || '';
+        document.getElementById('field-bairro-endereco').value = preset.bairro_endereco || '';
+        document.getElementById('field-servico-a-prestar').value = preset.servico_a_prestar || '';
+        document.getElementById('field-servico-prestado').value = preset.servico_prestado || '';
+        document.getElementById('field-valor-passado').value = preset.valor_passado || '';
+        document.getElementById('field-valor-a-cobrar').value = preset.valor_a_cobrar || '';
+        document.getElementById('field-observacoes').value = preset.observacoes || '';
+
+        this.updatePresetsForCategory(document.getElementById('field-categoria').value);
+        document.getElementById('modal-atendimento').classList.remove('hidden');
+        lucide.createIcons();
+      }
+
+      editAtendimento(id) {
+        const item = this.atendimentos.find(x => x.id === id);
+        if (!item) return;
+
+        this.editingItem = item;
+        document.getElementById('field-id').value = item.id;
+        document.getElementById('field-cliente-nome').value = item.cliente_nome || '';
+        document.getElementById('field-telefone').value = item.telefone || '';
+        document.getElementById('field-bairro-endereco').value = item.bairro_endereco || '';
+        document.getElementById('field-categoria').value = item.categoria || 'Ar-Condicionado';
+        document.getElementById('field-sessao').value = item.sessao || 'Novo Contato';
+        document.getElementById('field-servico-a-prestar').value = item.servico_a_prestar || '';
+        document.getElementById('field-servico-prestado').value = item.servico_prestado || '';
+        document.getElementById('field-valor-passado').value = item.valor_passado || '';
+        document.getElementById('field-valor-a-cobrar').value = item.valor_a_cobrar || '';
+        document.getElementById('field-observacoes').value = item.observacoes || '';
+
+        document.getElementById('modal-title').textContent = `Editar: ${item.cliente_nome}`;
+        document.getElementById('modal-subtitle').textContent = `ID: ${item.id} • Criado em: ${new Date(item.created_at).toLocaleDateString('pt-BR')}`;
+        document.getElementById('btn-delete-atendimento').classList.remove('hidden');
+
+        // Renderizar histórico
+        const hContainer = document.getElementById('historico-container');
+        const hList = document.getElementById('historico-list');
+        if (item.historico_alteracoes && item.historico_alteracoes.length > 0) {
+          hContainer.classList.remove('hidden');
+          hList.innerHTML = item.historico_alteracoes.map(h => `
+            <div class="border-b border-slate-800 pb-1">
+              <span class="text-ahs-cyan">${new Date(h.data).toLocaleString('pt-BR')}:</span>
+              <strong class="text-white">${h.acao}</strong> - ${h.detalhe}
+            </div>
+          `).join('');
+        } else {
+          hContainer.classList.add('hidden');
+        }
+
+        this.updatePresetsForCategory(item.categoria);
+        document.getElementById('modal-atendimento').classList.remove('hidden');
+        lucide.createIcons();
+      }
+
+      closeModal() {
+        document.getElementById('modal-atendimento').classList.add('hidden');
+        this.editingItem = null;
+      }
+
+      syncValores(valorPassado) {
+        // Ao preencher o orçamento passado pela primeira vez, sincroniza com o valor a cobrar
+        const aCobrarInput = document.getElementById('field-valor-a-cobrar');
+        if (aCobrarInput && (!aCobrarInput.value || aCobrarInput.value === '0')) {
+          aCobrarInput.value = valorPassado;
+        }
+      }
+
+      updatePresetsForCategory(cat) {
+        const container = document.getElementById('service-quick-tags');
+        if (!container) return;
+        const list = PRESETS[cat] || PRESETS['Ar-Condicionado'];
+
+        container.innerHTML = list.map(tag => `
+          <button type="button" onclick="app.appendQuickTag('${tag}')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-ahs-border transition-all">
+            + ${tag}
+          </button>
+        `).join('');
+      }
+
+      appendQuickTag(tag) {
+        const input = document.getElementById('field-servico-a-prestar');
+        if (input) {
+          const current = input.value.trim();
+          input.value = current ? `${current}, ${tag}` : tag;
+        }
+      }
+
+      async saveAtendimento(e) {
+        e.preventDefault();
+
+        const id = document.getElementById('field-id').value;
+        const cliente_nome = document.getElementById('field-cliente-nome').value.trim();
+        const telefone = document.getElementById('field-telefone').value.trim();
+        const bairro_endereco = document.getElementById('field-bairro-endereco').value.trim();
+        const categoria = document.getElementById('field-categoria').value;
+        const sessao = document.getElementById('field-sessao').value;
+        const servico_a_prestar = document.getElementById('field-servico-a-prestar').value.trim();
+        const servico_prestado = document.getElementById('field-servico-prestado').value.trim();
+        const valor_passado = parseFloat(document.getElementById('field-valor-passado').value) || 0.00;
+        const valor_a_cobrar = parseFloat(document.getElementById('field-valor-a-cobrar').value) || 0.00;
+        const observacoes = document.getElementById('field-observacoes').value.trim();
+
+        const historico = this.editingItem && this.editingItem.historico_alteracoes ? [...this.editingItem.historico_alteracoes] : [];
+        
+        // Registrar log de auditoria
+        if (this.editingItem) {
+          const mudancas = [];
+          if (this.editingItem.sessao !== sessao) mudancas.push(`Etapa: ${sessao}`);
+          if (parseFloat(this.editingItem.valor_passado) !== valor_passado) mudancas.push(`Orçamento: R$ ${valor_passado}`);
+          if (parseFloat(this.editingItem.valor_a_cobrar) !== valor_a_cobrar) mudancas.push(`A cobrar: R$ ${valor_a_cobrar}`);
+          
+          if (mudancas.length > 0) {
+            historico.push({
+              data: new Date().toISOString(),
+              acao: 'Atualização',
+              detalhe: mudancas.join('; ')
+            });
+          }
+        } else {
+          historico.push({
+            data: new Date().toISOString(),
+            acao: 'Criação',
+            detalhe: `Cadastrado em "${sessao}" com valor R$ ${valor_passado}`
+          });
+        }
+
+        const payload = {
+          cliente_nome,
+          telefone,
+          bairro_endereco,
+          categoria,
+          sessao,
+          servico_a_prestar,
+          servico_prestado,
+          valor_passado,
+          valor_a_cobrar,
+          observacoes,
+          historico_alteracoes: historico
+        };
+
+        if (id) payload.id = id;
+
+        try {
+          await supabaseManager.upsertAtendimento(payload);
+          this.closeModal();
+          await this.loadData();
+          this.render();
+          this.showToast('Atendimento salvo com sucesso!', 'success');
+          if (sessao === 'Concluído / Pago') {
+            confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 } });
+          }
+        } catch (err) {
+          console.error(err);
+          this.showToast('Erro ao salvar no Supabase.', 'error');
+        }
+      }
+
+      async deleteCurrentAtendimento() {
+        if (!this.editingItem) return;
+        if (!confirm(`Deseja realmente excluir o atendimento de "${this.editingItem.cliente_nome}"?`)) return;
+
+        try {
+          await supabaseManager.deleteAtendimento(this.editingItem.id);
+          this.closeModal();
+          await this.loadData();
+          this.render();
+          this.showToast('Atendimento removido!', 'info');
+        } catch (err) {
+          console.error(err);
+          this.showToast('Erro ao excluir no Supabase.', 'error');
+        }
+      }
+
+      // ========================== WHATSAPP QUICK LINK ======================
+      sendWhatsApp(id) {
+        const item = this.atendimentos.find(x => x.id === id);
+        if (!item || !item.telefone) {
+          this.showToast('Cliente sem telefone informado.', 'error');
+          return;
+        }
+
+        const phoneClean = item.telefone.replace(/\D/g, '');
+        const phoneFormatted = phoneClean.startsWith('55') ? phoneClean : `55${phoneClean}`;
+
+        const msg = `Olá *${item.cliente_nome}*! 👋\n` +
+          `Aqui é da *AHS Climatização | Ar Condicionado e Elétrica*.\n\n` +
+          `📌 *Resumo do Atendimento:* ${item.categoria}\n` +
+          `🔧 *Serviço:* ${item.servico_a_prestar}\n` +
+          `${item.servico_prestado ? `✅ *Executado:* ${item.servico_prestado}\n` : ''}` +
+          `💰 *Valor do Orçamento:* R$ ${(parseFloat(item.valor_passado) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n` +
+          `💳 *Saldo a Pagar:* R$ ${(parseFloat(item.valor_a_cobrar) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n` +
+          `📍 *Etapa Atual:* ${item.sessao}\n\n` +
+          `Qualquer dúvida ou para confirmar o agendamento, estamos à disposição! ❄️⚡`;
+
+        const url = `https://api.whatsapp.com/send?phone=${phoneFormatted}&text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+      }
+
+      // ========================== MODAL DE IMPRESSÃO / OS ==================
+      openPrintModal(id) {
+        const item = this.atendimentos.find(x => x.id === id);
+        if (!item) return;
+
+        document.getElementById('print-doc-number').textContent = `OS #${item.id.slice(0, 8)}`;
+        document.getElementById('print-doc-date').textContent = `Data: ${new Date(item.created_at || Date.now()).toLocaleDateString('pt-BR')}`;
+        document.getElementById('print-cliente-nome').textContent = item.cliente_nome;
+        document.getElementById('print-cliente-telefone').textContent = item.telefone || 'Não informado';
+        document.getElementById('print-cliente-endereco').textContent = item.bairro_endereco || 'Não informado';
+        document.getElementById('print-categoria').textContent = item.categoria;
+        document.getElementById('print-sessao').textContent = item.sessao;
+        document.getElementById('print-servico-a-prestar').textContent = item.servico_a_prestar;
+        
+        const execContainer = document.getElementById('print-executado-container');
+        if (item.servico_prestado) {
+          execContainer.style.display = 'block';
+          document.getElementById('print-servico-prestado').textContent = item.servico_prestado;
+        } else {
+          execContainer.style.display = 'none';
+        }
+
+        document.getElementById('print-valor-passado').textContent = `R$ ${(parseFloat(item.valor_passado) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        document.getElementById('print-valor-a-cobrar').textContent = `R$ ${(parseFloat(item.valor_a_cobrar) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        document.getElementById('print-observacoes').textContent = item.observacoes || 'Garantia de 90 dias na mão de obra.';
+        document.getElementById('print-cliente-assinatura').textContent = `${item.cliente_nome}`;
+
+        document.getElementById('modal-print').classList.remove('hidden');
+        lucide.createIcons();
+      }
+
+      closePrintModal() {
+        document.getElementById('modal-print').classList.add('hidden');
+      }
+
+      // ========================== FILTROS & VISUALIZAÇÕES ==================
+      setView(view) {
+        this.currentView = view;
+        const kanban = document.getElementById('view-kanban');
+        const table = document.getElementById('view-table');
+        const metrics = document.getElementById('view-metrics');
+
+        const btnKanban = document.getElementById('view-kanban-btn');
+        const btnTable = document.getElementById('view-table-btn');
+        const btnMetrics = document.getElementById('view-metrics-btn');
+
+        const mobKanban = document.getElementById('nav-mobile-kanban');
+        const mobTable = document.getElementById('nav-mobile-table');
+        const mobMetrics = document.getElementById('nav-mobile-metrics');
+
+        kanban.classList.toggle('hidden', view !== 'kanban');
+        table.classList.toggle('hidden', view !== 'table');
+        metrics.classList.toggle('hidden', view !== 'metrics');
+
+        // Atualizar botões Desktop
+        btnKanban.className = view === 'kanban' ? 'px-2.5 py-1 rounded text-xs font-medium bg-ahs-cardLight text-ahs-cyan shadow-sm flex items-center gap-1' : 'px-2.5 py-1 rounded text-xs font-medium text-slate-400 hover:text-white flex items-center gap-1';
+        btnTable.className = view === 'table' ? 'px-2.5 py-1 rounded text-xs font-medium bg-ahs-cardLight text-ahs-cyan shadow-sm flex items-center gap-1' : 'px-2.5 py-1 rounded text-xs font-medium text-slate-400 hover:text-white flex items-center gap-1';
+        btnMetrics.className = view === 'metrics' ? 'px-2.5 py-1 rounded text-xs font-medium bg-ahs-cardLight text-ahs-cyan shadow-sm flex items-center gap-1' : 'px-2.5 py-1 rounded text-xs font-medium text-slate-400 hover:text-white flex items-center gap-1';
+
+        // Atualizar botões Mobile
+        if (mobKanban) mobKanban.className = view === 'kanban' ? 'flex flex-col items-center text-ahs-cyan' : 'flex flex-col items-center text-slate-400';
+        if (mobTable) mobTable.className = view === 'table' ? 'flex flex-col items-center text-ahs-cyan' : 'flex flex-col items-center text-slate-400';
+        if (mobMetrics) mobMetrics.className = view === 'metrics' ? 'flex flex-col items-center text-ahs-cyan' : 'flex flex-col items-center text-slate-400';
+
+        this.render();
+      }
+
+      filterSearch(text) {
+        this.filterText = text;
+        this.render();
+      }
+
+      filterCategoria(cat) {
+        this.currentCategory = cat;
+        this.render();
+      }
+
+      // ========================== CONFIGURAÇÃO DO SUPABASE =================
+      openSupabaseModal() {
+        document.getElementById('config-supabase-url').value = localStorage.getItem('ahs_supabase_url') || '';
+        document.getElementById('config-supabase-key').value = localStorage.getItem('ahs_supabase_key') || '';
+        document.getElementById('modal-supabase').classList.remove('hidden');
+      }
+
+      closeSupabaseModal() {
+        document.getElementById('modal-supabase').classList.add('hidden');
+      }
+
+      saveSupabaseConfig() {
+        const url = document.getElementById('config-supabase-url').value.trim();
+        const key = document.getElementById('config-supabase-key').value.trim();
+
+        if (!url || !key) {
+          this.showToast('Preencha a URL e a Anon Key do Supabase.', 'error');
+          return;
+        }
+
+        localStorage.setItem('ahs_supabase_url', url);
+        localStorage.setItem('ahs_supabase_key', key);
+        this.closeSupabaseModal();
+        supabaseManager.init();
+        this.loadData().then(() => this.render());
+        this.showToast('Configurações salvas! Conectando...', 'success');
+      }
+
+      enableDemoMode() {
+        localStorage.removeItem('ahs_supabase_url');
+        localStorage.removeItem('ahs_supabase_key');
+        supabaseManager.setDemoMode();
+        this.closeSupabaseModal();
+        this.loadData().then(() => this.render());
+        this.showToast('Modo demonstração ativado!', 'info');
+      }
+
+      // ========================== AUTH UI & SUPABASE =======================
+      toggleAuthMenu() {
+        const dd = document.getElementById('auth-dropdown');
+        if (dd) dd.classList.toggle('hidden');
+      }
+
+      updateUserUI(email) {
+        const display = document.getElementById('user-display-name');
+        const menuEmail = document.getElementById('menu-user-email');
+        const initials = document.getElementById('user-avatar-initials');
+        const authBtn = document.getElementById('auth-toggle-btn');
+
+        if (display) display.textContent = email.split('@')[0];
+        if (menuEmail) menuEmail.textContent = email;
+        if (initials) initials.textContent = email.slice(0, 2).toUpperCase();
+        if (authBtn) {
+          authBtn.innerHTML = supabaseManager.currentUser 
+            ? '<i data-lucide="log-out" class="w-3.5 h-3.5"></i> Desconectar (Logout)' 
+            : '<i data-lucide="log-in" class="w-3.5 h-3.5"></i> Fazer Login no Supabase';
+        }
+        lucide.createIcons();
+      }
+
+      handleAuthAction() {
+        this.toggleAuthMenu();
+        if (supabaseManager.currentUser && supabaseManager.client) {
+          supabaseManager.client.auth.signOut().then(() => {
+            supabaseManager.currentUser = null;
+            this.updateUserUI('Operador AHS (Offline)');
+            this.showToast('Desconectado com sucesso.', 'info');
+          });
+        } else {
+          document.getElementById('modal-auth').classList.remove('hidden');
+        }
+      }
+
+      closeAuthModal() {
+        document.getElementById('modal-auth').classList.add('hidden');
+      }
+
+      async submitAuth(e) {
+        e.preventDefault();
+        if (!supabaseManager.client) {
+          this.showToast('Configure a URL e chave do Supabase primeiro.', 'error');
+          this.openSupabaseModal();
+          this.closeAuthModal();
+          return;
+        }
+
+        const email = document.getElementById('auth-email').value;
+        const password = document.getElementById('auth-password').value;
+        const isSignUp = document.getElementById('btn-auth-submit').textContent.includes('Criar');
+
+        try {
+          if (isSignUp) {
+            const { data, error } = await supabaseManager.client.auth.signUp({ email, password });
+            if (error) throw error;
+            this.showToast('Conta criada! Verifique o e-mail ou faça login.', 'success');
+          } else {
+            const { data, error } = await supabaseManager.client.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            supabaseManager.currentUser = data.user;
+            this.updateUserUI(data.user.email);
+            this.showToast('Login realizado com sucesso!', 'success');
+          }
+          this.closeAuthModal();
+          await this.loadData();
+          this.render();
+        } catch (err) {
+          this.showToast(err.message, 'error');
+        }
+      }
+
+      toggleSignUpMode() {
+        const btn = document.getElementById('btn-auth-submit');
+        const toggle = document.getElementById('btn-toggle-signup');
+        if (btn.textContent.includes('Entrar')) {
+          btn.textContent = 'Criar Nova Conta';
+          toggle.textContent = 'Já tem conta? Fazer Login';
+        } else {
+          btn.textContent = 'Entrar no CRM';
+          toggle.textContent = 'Criar nova conta de técnico';
+        }
+      }
+
+      openHelpModal() {
+        document.getElementById('modal-help').classList.remove('hidden');
+      }
+
+      closeHelpModal() {
+        document.getElementById('modal-help').classList.add('hidden');
+      }
+
+      exportBackupJSON() {
+        const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(this.atendimentos, null, 2));
+        const dlAnchor = document.createElement('a');
+        dlAnchor.setAttribute('href', dataStr);
+        dlAnchor.setAttribute('download', `backup_ahs_atendimentos_${new Date().toISOString().slice(0, 10)}.json`);
+        dlAnchor.click();
+        this.showToast('Backup JSON exportado!', 'success');
+      }
+
+      installPWA() {
+        if (this.deferredPrompt) {
+          this.deferredPrompt.prompt();
+          this.deferredPrompt.userChoice.then(() => {
+            this.deferredPrompt = null;
+            document.getElementById('pwa-install-banner').remove();
+          });
+        }
+      }
+
+      showToast(msg, type = 'info') {
+        const toast = document.getElementById('toast');
+        const text = document.getElementById('toast-message');
+        const icon = document.getElementById('toast-icon');
+        const content = document.getElementById('toast-content');
+
+        text.textContent = msg;
+        if (type === 'success') {
+          content.className = 'px-4 py-2.5 rounded-xl text-xs font-semibold shadow-2xl flex items-center gap-2 border bg-emerald-950 text-emerald-300 border-emerald-700';
+          icon.setAttribute('data-lucide', 'check-circle');
+        } else if (type === 'error') {
+          content.className = 'px-4 py-2.5 rounded-xl text-xs font-semibold shadow-2xl flex items-center gap-2 border bg-red-950 text-red-300 border-red-700';
+          icon.setAttribute('data-lucide', 'alert-circle');
+        } else {
+          content.className = 'px-4 py-2.5 rounded-xl text-xs font-semibold shadow-2xl flex items-center gap-2 border bg-slate-900 text-slate-200 border-ahs-border';
+          icon.setAttribute('data-lucide', 'info');
+        }
+
+        lucide.createIcons();
+        toast.classList.remove('translate-y-[-100px]', 'opacity-0', 'pointer-events-none');
+        toast.classList.add('translate-y-0', 'opacity-100');
+
+        setTimeout(() => {
+          toast.classList.remove('translate-y-0', 'opacity-100');
+          toast.classList.add('translate-y-[-100px]', 'opacity-0', 'pointer-events-none');
+        }, 3200);
+      }
+    }
+
+    // Instanciar objetos globais
+    const supabaseManager = new SupabaseManager();
+    const voiceAssistant = new VoiceAssistant();
+    const app = new AppController();
+
+    // Inicialização ao carregar a página
+    window.addEventListener('DOMContentLoaded', () => {
+      app.init();
+    });
+
+    // Fechar dropdowns ao clicar fora
+    window.addEventListener('click', (e) => {
+      if (!e.target.closest('#auth-actions')) {
+        const dd = document.getElementById('auth-dropdown');
+        if (dd && !dd.classList.contains('hidden')) {
+          dd.classList.add('hidden');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
