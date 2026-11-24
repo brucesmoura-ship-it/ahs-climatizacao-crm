@@ -63,6 +63,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <!-- html2pdf.js para gerar PDF nativo no Celular (Android e iOS) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     /* Estilos Customizados & Scrollbars */
@@ -360,6 +362,7 @@
                 <th class="p-3">Orçado</th>
                 <th class="p-3">A Cobrar</th>
                 <th class="p-3">Etapa Atual</th>
+                <th class="p-3">Técnico (Criado Por)</th>
                 <th class="p-3 text-right">Ações</th>
               </tr>
             </thead>
@@ -749,43 +752,48 @@
     </div>
   </div>
 
-  <!-- MODAL DE AUTENTICAÇÃO (LOGIN / REGISTRO SUPABASE) -->
-  <div id="modal-auth" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-    <div class="bg-ahs-card border border-ahs-border rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 text-xs text-slate-200">
+  <!-- MODAL DE IDENTIFICAÇÃO DO TÉCNICO (LOGIN SIMPLES COM NOME E SENHA) -->
+  <div id="modal-auth" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+    <div class="bg-ahs-card border border-ahs-border rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 text-xs text-slate-200 animate-in fade-in zoom-in-95">
       <div class="text-center">
-        <div class="w-16 h-16 rounded-xl bg-black border border-ahs-border mx-auto flex items-center justify-center overflow-hidden mb-2">
+        <div class="w-16 h-16 rounded-xl bg-black border border-ahs-border mx-auto flex items-center justify-center overflow-hidden mb-2 shadow-lg">
           <img src="logo.jpg" onerror="this.onerror=null;this.src=AHS_LOGO_B64;" alt="AHS Climatização" class="w-full h-full object-cover">
         </div>
-        <h3 class="font-black text-lg text-white">Acesso à Equipe AHS</h3>
-        <p class="text-slate-400 text-[11px]">Entre com sua conta para proteger e sincronizar os orçamentos</p>
+        <h3 class="font-black text-lg text-white">Identificação da Equipe AHS</h3>
+        <p class="text-slate-400 text-[11px] mt-0.5">Identifique-se para registrar quem cadastrou cada atendimento</p>
       </div>
 
-      <form id="form-auth" onsubmit="app.submitAuth(event)" class="space-y-3">
+      <form id="form-auth" onsubmit="app.submitSimpleAuth(event)" class="space-y-3.5">
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">E-mail</label>
-          <input type="email" id="auth-email" required placeholder="tecnico@ahs.com.br" 
-            class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:border-ahs-cyan focus:outline-none">
+          <label class="block font-semibold text-slate-300 mb-1 flex items-center gap-1">
+            <i data-lucide="user" class="w-3.5 h-3.5 text-ahs-cyan"></i> Seu Nome (Técnico / Atendente) <span class="text-red-400">*</span>
+          </label>
+          <input type="text" id="auth-tecnico-nome" required placeholder="Ex: Bruno, Marcos, Carlos..." 
+            class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:border-ahs-cyan focus:outline-none font-medium">
+          <span class="text-[10px] text-slate-500 mt-1 block">Este nome aparecerá nos novos clientes, orçamentos e ordens de serviço.</span>
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">Senha</label>
-          <input type="password" id="auth-password" required placeholder="••••••••" 
-            class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:border-ahs-cyan focus:outline-none">
+          <label class="block font-semibold text-slate-300 mb-1 flex items-center gap-1">
+            <i data-lucide="lock" class="w-3.5 h-3.5 text-ahs-gold"></i> Senha de Acesso
+          </label>
+          <input type="password" id="auth-tecnico-senha" placeholder="Digite sua senha (ex: 1234)" 
+            class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:border-ahs-gold focus:outline-none">
         </div>
 
-        <button type="submit" id="btn-auth-submit" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-ahs-cyan to-ahs-cyanHover text-black font-bold shadow-md hover:opacity-95 mt-2">
-          Entrar no CRM
+        <button type="submit" id="btn-auth-submit" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-ahs-cyan to-ahs-cyanHover text-black font-bold shadow-md hover:opacity-95 active:scale-95 flex items-center justify-center gap-2 mt-2">
+          <i data-lucide="log-in" class="w-4 h-4"></i> Entrar e Identificar
         </button>
 
         <div class="flex items-center justify-between text-[11px] pt-1">
-          <button type="button" onclick="app.toggleSignUpMode()" id="btn-toggle-signup" class="text-ahs-cyan hover:underline">
-            Criar nova conta de técnico
-          </button>
-          <button type="button" onclick="app.closeAuthModal()" class="text-slate-500 hover:text-slate-300">
+          <span class="text-[10px] text-slate-500">Sua sessão fica salva no celular.</span>
+          <button type="button" onclick="app.closeAuthModal()" class="text-slate-400 hover:text-white">
             Fechar
           </button>
         </div>
       </form>
+    </div>
+  </div>
     </div>
   </div>
 
@@ -798,9 +806,18 @@
         <span class="font-bold text-xs text-slate-700 flex items-center gap-1.5">
           <i data-lucide="printer" class="w-4 h-4 text-blue-600"></i> Orçamento & Ordem de Serviço AHS
         </span>
-        <div class="flex items-center gap-2">
-          <button onclick="window.print()" class="px-3 py-1.5 rounded-lg bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 flex items-center gap-1">
-            <i data-lucide="printer" class="w-3.5 h-3.5"></i> Imprimir / Gerar PDF
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <!-- Botão Baixar PDF Real (Funciona 100% no celular) -->
+          <button id="btn-download-pdf" onclick="app.downloadPDF()" class="px-3 py-1.5 rounded-lg bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 flex items-center gap-1 active:scale-95 shadow-sm">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Baixar PDF
+          </button>
+          <!-- Botão Imprimir (Nativo Computador) -->
+          <button onclick="app.printDocument()" class="hidden sm:flex px-2.5 py-1.5 rounded-lg bg-slate-200 text-slate-800 font-bold text-xs hover:bg-slate-300 items-center gap-1">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i> Imprimir
+          </button>
+          <!-- Botão Compartilhar WhatsApp da OS -->
+          <button onclick="app.sharePrintWhatsApp()" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 flex items-center gap-1 active:scale-95 shadow-sm">
+            <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp
           </button>
           <button onclick="app.closePrintModal()" class="p-1 rounded-lg hover:bg-slate-200 text-slate-600">
             <i data-lucide="x" class="w-5 h-5"></i>
@@ -884,8 +901,8 @@
         <!-- Assinaturas -->
         <div class="pt-8 grid grid-cols-2 gap-8 text-center text-[10px]">
           <div>
-            <div class="border-t border-slate-400 pt-1">AHS Climatização & Elétrica</div>
-            <span class="text-slate-500">Técnico Responsável</span>
+            <div class="border-t border-slate-400 pt-1 font-bold text-slate-900" id="print-tecnico-nome">AHS Climatização & Elétrica</div>
+            <span class="text-slate-500" id="print-tecnico-cargo">Técnico Responsável</span>
           </div>
           <div>
             <div class="border-t border-slate-400 pt-1">Assinatura do Cliente</div>
@@ -1251,11 +1268,20 @@
           delete payload.id; // Deixar Postgres gerar UUID real
         }
 
-        const { data, error } = await this.client
+        let { data, error } = await this.client
           .from('atendimentos')
           .upsert(payload)
           .select()
           .single();
+
+        // Fallback seguro caso a coluna criado_por ainda não tenha sido criada no Supabase
+        if (error && error.message && error.message.includes('criado_por')) {
+          console.warn('Coluna criado_por ausente no Supabase. Salvando no histórico e tentando novamente...');
+          delete payload.criado_por;
+          const retry = await this.client.from('atendimentos').upsert(payload).select().single();
+          data = retry.data;
+          error = retry.error;
+        }
 
         if (error) throw error;
         return data;
@@ -1557,6 +1583,7 @@
         this.currentCategory = 'todos';
         this.deferredPrompt = null;
         this.editingItem = null;
+        this.currentUserName = localStorage.getItem('ahs_tecnico_nome') || '';
       }
 
       async init() {
@@ -1585,6 +1612,9 @@
           const banner = document.getElementById('pwa-install-banner');
           if (banner) banner.classList.remove('hidden');
         });
+
+        // Inicializar Identificação do Técnico (Login)
+        this.initAuth();
 
         // Carregar atendimentos
         await this.loadData();
@@ -1710,11 +1740,19 @@
             class="bg-slate-900 border border-ahs-border hover:border-slate-500 rounded-xl p-3 shadow-md hover:shadow-xl transition-all cursor-grab active:cursor-grabbing group relative">
             
             <!-- Linha 1: Nome do Cliente e Categoria -->
-            <div class="flex items-start justify-between gap-1 mb-1.5">
+            <div class="flex items-start justify-between gap-1 mb-1">
               <h5 class="font-extrabold text-xs text-white hover:text-ahs-cyan cursor-pointer truncate" onclick="app.editAtendimento('${item.id}')">
                 ${item.cliente_nome}
               </h5>
               ${catBadge}
+            </div>
+
+            <!-- Identificação de Quem Adicionou -->
+            <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1.5 pb-1 border-b border-ahs-border/40">
+              <span class="flex items-center gap-1 text-ahs-cyan font-medium truncate" title="Adicionado por: ${item.criado_por || 'Equipe AHS'}">
+                <i data-lucide="user" class="w-3 h-3 text-ahs-cyan"></i> ${item.criado_por || 'Equipe AHS'}
+              </span>
+              <span class="text-[9px] text-slate-500">${new Date(item.created_at || Date.now()).toLocaleDateString('pt-BR')}</span>
             </div>
 
             <!-- Demanda Inicial -->
@@ -1859,6 +1897,11 @@
             <td class="p-3">
               <span class="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-200 border border-slate-700">
                 ${item.sessao}
+              </span>
+            </td>
+            <td class="p-3 whitespace-nowrap">
+              <span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-ahs-cyan border border-slate-700 font-medium flex items-center gap-1 w-max">
+                <i data-lucide="user" class="w-3 h-3"></i> ${item.criado_por || 'Equipe AHS'}
               </span>
             </td>
             <td class="p-3 text-right space-x-1 whitespace-nowrap">
@@ -2074,6 +2117,8 @@
 
         const historico = this.editingItem && this.editingItem.historico_alteracoes ? [...this.editingItem.historico_alteracoes] : [];
         
+        const tecnicoAtual = this.currentUserName || 'Equipe AHS';
+
         // Registrar log de auditoria
         if (this.editingItem) {
           const mudancas = [];
@@ -2085,14 +2130,16 @@
             historico.push({
               data: new Date().toISOString(),
               acao: 'Atualização',
-              detalhe: mudancas.join('; ')
+              detalhe: mudancas.join('; '),
+              usuario: tecnicoAtual
             });
           }
         } else {
           historico.push({
             data: new Date().toISOString(),
             acao: 'Criação',
-            detalhe: `Cadastrado em "${sessao}" com valor R$ ${valor_passado}`
+            detalhe: `Cadastrado por ${tecnicoAtual} em "${sessao}" com valor R$ ${valor_passado}`,
+            usuario: tecnicoAtual
           });
         }
 
@@ -2107,6 +2154,7 @@
           valor_passado,
           valor_a_cobrar,
           observacoes,
+          criado_por: this.editingItem ? (this.editingItem.criado_por || tecnicoAtual) : tecnicoAtual,
           historico_alteracoes: historico
         };
 
@@ -2172,8 +2220,9 @@
       openPrintModal(id) {
         const item = this.atendimentos.find(x => x.id === id);
         if (!item) return;
+        this.currentPrintItem = item;
 
-        document.getElementById('print-doc-number').textContent = `OS #${item.id.slice(0, 8)}`;
+        document.getElementById('print-doc-number').textContent = `OS #${String(item.id || '').slice(0, 8)}`;
         document.getElementById('print-doc-date').textContent = `Data: ${new Date(item.created_at || Date.now()).toLocaleDateString('pt-BR')}`;
         document.getElementById('print-cliente-nome').textContent = item.cliente_nome;
         document.getElementById('print-cliente-telefone').textContent = item.telefone || 'Não informado';
@@ -2194,13 +2243,66 @@
         document.getElementById('print-valor-a-cobrar').textContent = `R$ ${(parseFloat(item.valor_a_cobrar) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
         document.getElementById('print-observacoes').textContent = item.observacoes || 'Garantia de 90 dias na mão de obra.';
         document.getElementById('print-cliente-assinatura').textContent = `${item.cliente_nome}`;
+        const tecEl = document.getElementById('print-tecnico-nome');
+        if (tecEl) tecEl.textContent = item.criado_por ? `${item.criado_por} (AHS)` : 'AHS Climatização & Elétrica';
 
         document.getElementById('modal-print').classList.remove('hidden');
         lucide.createIcons();
       }
 
+      printDocument() {
+        try {
+          window.print();
+        } catch (e) {
+          this.downloadPDF();
+        }
+      }
+
+      async downloadPDF() {
+        const btn = document.getElementById('btn-download-pdf');
+        const oldHtml = btn ? btn.innerHTML : '';
+        if (btn) btn.innerHTML = '<span class="inline-block animate-spin mr-1">⌛</span> Gerando...';
+
+        this.showToast('Gerando arquivo PDF da OS...', 'info');
+
+        const element = document.getElementById('print-area');
+        const nomeCliente = document.getElementById('print-cliente-nome').textContent || 'Cliente';
+        const cleanName = nomeCliente.trim().replace(/[^a-zA-Z0-9]/g, '_');
+        const fileName = `AHS_OS_${cleanName}.pdf`;
+
+        if (window.html2pdf) {
+          const opt = {
+            margin:       [6, 6, 6, 6],
+            filename:     fileName,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
+
+          try {
+            await html2pdf().set(opt).from(element).save();
+            this.showToast('PDF baixado no celular com sucesso!', 'success');
+          } catch (err) {
+            console.error('Erro ao gerar PDF:', err);
+            window.print();
+          } finally {
+            if (btn) btn.innerHTML = oldHtml;
+            lucide.createIcons();
+          }
+        } else {
+          if (btn) btn.innerHTML = oldHtml;
+          window.print();
+        }
+      }
+
+      sharePrintWhatsApp() {
+        if (!this.currentPrintItem) return;
+        this.sendWhatsApp(this.currentPrintItem.id);
+      }
+
       closePrintModal() {
         document.getElementById('modal-print').classList.add('hidden');
+        this.currentPrintItem = null;
       }
 
       // ========================== FILTROS & VISUALIZAÇÕES ==================
@@ -2282,44 +2384,81 @@
         this.showToast('Modo demonstração ativado!', 'info');
       }
 
-      // ========================== AUTH UI & SUPABASE =======================
+      // ========================== IDENTIFICAÇÃO DO TÉCNICO (LOGIN) =======================
+      initAuth() {
+        const salvo = localStorage.getItem('ahs_tecnico_nome');
+        if (salvo) {
+          this.currentUserName = salvo;
+          this.updateUserUI(salvo);
+        } else {
+          // Se ainda não se identificou, exibe a tela de login simples
+          setTimeout(() => {
+            this.openAuthModal();
+          }, 400);
+        }
+      }
+
+      openAuthModal() {
+        const inp = document.getElementById('auth-tecnico-nome');
+        if (inp && this.currentUserName) {
+          inp.value = this.currentUserName;
+        }
+        document.getElementById('modal-auth').classList.remove('hidden');
+        lucide.createIcons();
+      }
+
+      closeAuthModal() {
+        if (!this.currentUserName) {
+          this.currentUserName = 'Equipe AHS';
+          this.updateUserUI('Equipe AHS');
+        }
+        document.getElementById('modal-auth').classList.add('hidden');
+      }
+
+      submitSimpleAuth(e) {
+        e.preventDefault();
+        const nome = document.getElementById('auth-tecnico-nome').value.trim();
+        const senha = document.getElementById('auth-tecnico-senha').value.trim();
+
+        if (!nome) {
+          this.showToast('Por favor, informe seu nome.', 'error');
+          return;
+        }
+
+        this.currentUserName = nome;
+        localStorage.setItem('ahs_tecnico_nome', nome);
+        if (senha) {
+          localStorage.setItem('ahs_tecnico_senha', senha);
+        }
+
+        this.updateUserUI(nome);
+        document.getElementById('modal-auth').classList.add('hidden');
+        this.showToast(`Bem-vindo, ${nome}! Seus contatos serão marcados com seu nome.`, 'success');
+      }
+
       toggleAuthMenu() {
         const dd = document.getElementById('auth-dropdown');
         if (dd) dd.classList.toggle('hidden');
       }
 
-      updateUserUI(email) {
+      updateUserUI(nome) {
         const display = document.getElementById('user-display-name');
         const menuEmail = document.getElementById('menu-user-email');
         const initials = document.getElementById('user-avatar-initials');
         const authBtn = document.getElementById('auth-toggle-btn');
 
-        if (display) display.textContent = email.split('@')[0];
-        if (menuEmail) menuEmail.textContent = email;
-        if (initials) initials.textContent = email.slice(0, 2).toUpperCase();
+        if (display) display.textContent = nome;
+        if (menuEmail) menuEmail.textContent = `Técnico: ${nome}`;
+        if (initials) initials.textContent = nome.slice(0, 2).toUpperCase();
         if (authBtn) {
-          authBtn.innerHTML = supabaseManager.currentUser 
-            ? '<i data-lucide="log-out" class="w-3.5 h-3.5"></i> Desconectar (Logout)' 
-            : '<i data-lucide="log-in" class="w-3.5 h-3.5"></i> Fazer Login no Supabase';
+          authBtn.innerHTML = '<i data-lucide="user-check" class="w-3.5 h-3.5"></i> Trocar Técnico';
         }
         lucide.createIcons();
       }
 
       handleAuthAction() {
         this.toggleAuthMenu();
-        if (supabaseManager.currentUser && supabaseManager.client) {
-          supabaseManager.client.auth.signOut().then(() => {
-            supabaseManager.currentUser = null;
-            this.updateUserUI('Operador AHS (Offline)');
-            this.showToast('Desconectado com sucesso.', 'info');
-          });
-        } else {
-          document.getElementById('modal-auth').classList.remove('hidden');
-        }
-      }
-
-      closeAuthModal() {
-        document.getElementById('modal-auth').classList.add('hidden');
+        this.openAuthModal();
       }
 
       async submitAuth(e) {
