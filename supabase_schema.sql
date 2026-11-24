@@ -38,25 +38,11 @@ CREATE INDEX IF NOT EXISTS idx_atendimentos_sessao ON public.atendimentos(sessao
 CREATE INDEX IF NOT EXISTS idx_atendimentos_categoria ON public.atendimentos(categoria);
 CREATE INDEX IF NOT EXISTS idx_atendimentos_created_at ON public.atendimentos(created_at DESC);
 
--- 3. Função e Trigger para Atualizar o Campo `updated_at` Automaticamente
-CREATE OR REPLACE FUNCTION public.handle_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = now();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS trigger_atendimentos_updated_at ON public.atendimentos;
-CREATE TRIGGER trigger_atendimentos_updated_at
-    BEFORE UPDATE ON public.atendimentos
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
-
--- 4. Habilitar Segurança em Nível de Linha (RLS - Row Level Security)
+-- 3. Habilitar Segurança em Nível de Linha (RLS - Row Level Security)
 ALTER TABLE public.atendimentos ENABLE ROW LEVEL SECURITY;
 
--- Políticas de RLS para Usuários Autenticados (Acesso Completo aos Seus Próprios Registros)
+-- 4. Políticas de Acesso Seguro (RLS)
+-- Permite que os usuários autenticados da empresa gerenciem os atendimentos
 DROP POLICY IF EXISTS "Usuários autenticados podem visualizar seus atendimentos" ON public.atendimentos;
 CREATE POLICY "Usuários autenticados podem visualizar seus atendimentos"
     ON public.atendimentos
@@ -86,14 +72,24 @@ CREATE POLICY "Usuários autenticados podem excluir seus atendimentos"
     TO authenticated
     USING (auth.uid() = user_id);
 
--- Política alternativa (opcional/modo equipe): Se quiser permitir que qualquer usuário autenticado da empresa veja os registros:
--- CREATE POLICY "Equipe autenticada pode gerenciar atendimentos"
---     ON public.atendimentos FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
 -- 5. Habilitar Supabase Realtime para Sincronização Instantânea Celular <-> Computador
--- Garante que a tabela 'atendimentos' emita eventos INSERT, UPDATE e DELETE via WebSocket
 ALTER PUBLICATION supabase_realtime ADD TABLE public.atendimentos;
 
--- Comentários informativos
-COMMENT ON TABLE public.atendimentos IS 'Tabela de clientes e ordens de serviços da AHS Climatização | Ar Condicionado e Elétrica';
-COMMENT ON COLUMN public.atendimentos.historico_alteracoes IS 'Array JSON com histórico de alterações de valores, sessões e notas com timestamp';
+-- 6. Trigger Opcional para updated_at (compatível com o parser web do Supabase)
+DROP TRIGGER IF EXISTS trigger_atendimentos_updated_at ON public.atendimentos;
+DROP FUNCTION IF EXISTS public.handle_updated_at() CASCADE;
+
+CREATE FUNCTION public.handle_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trigger_atendimentos_updated_at
+    BEFORE UPDATE ON public.atendimentos
+    FOR EACH ROW
+    EXECUTE PROCEDURE public.handle_updated_at();
