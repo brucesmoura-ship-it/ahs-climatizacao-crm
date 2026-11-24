@@ -185,6 +185,9 @@
             <button onclick="app.openHelpModal(); app.toggleAuthMenu();" class="w-full text-left px-3 py-2 rounded-lg hover:bg-ahs-cardLight text-slate-300 flex items-center gap-2">
               <i data-lucide="mic" class="w-3.5 h-3.5 text-ahs-gold"></i> Guia de Comandos de Voz
             </button>
+            <button onclick="app.openInstallModal(); app.toggleAuthMenu();" class="w-full text-left px-3 py-2 rounded-lg hover:bg-ahs-cardLight text-slate-300 flex items-center gap-2">
+              <i data-lucide="smartphone" class="w-3.5 h-3.5 text-ahs-cold"></i> Como Instalar no Celular
+            </button>
             <div class="border-t border-ahs-border/60 my-1"></div>
             <button id="auth-toggle-btn" onclick="app.handleAuthAction()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-red-500/20 text-red-400 flex items-center gap-2">
               <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Desconectar (Logout)
@@ -947,6 +950,77 @@
     </div>
   </div>
 
+  <!-- MODAL DE COMO INSTALAR NO CELULAR -->
+  <div id="modal-install" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+    <div class="bg-ahs-card border border-ahs-border rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-6 space-y-4 text-xs text-slate-200 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-ahs-border pb-3">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 rounded-lg bg-ahs-cyan/20 text-ahs-cyan">
+            <i data-lucide="smartphone" class="w-5 h-5"></i>
+          </div>
+          <h3 class="font-bold text-base text-white">Como Instalar no Celular</h3>
+        </div>
+        <button onclick="app.closeInstallModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Alerta importante sobre WhatsApp -->
+      <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 space-y-1">
+        <p class="font-bold flex items-center gap-1.5 text-xs">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i> Abriu pelo link do WhatsApp?
+        </p>
+        <p class="text-[11px] leading-relaxed">
+          O navegador interno do WhatsApp bloqueia a instalação e o microfone! Toque nos <strong>três pontinhos (⋮)</strong> no topo do WhatsApp e escolha <strong>"Abrir no Chrome"</strong> (Android) ou <strong>"Abrir no Safari"</strong> (iPhone).
+        </p>
+      </div>
+
+      <!-- Passo a passo iPhone -->
+      <div class="p-3.5 bg-slate-900 rounded-xl border border-ahs-border space-y-2">
+        <div class="flex items-center gap-2 text-white font-bold text-xs">
+          <span class="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-[11px]"></span>
+          No iPhone (iOS / Safari)
+        </div>
+        <ol class="list-decimal list-inside space-y-1 text-slate-300 text-[11px] leading-relaxed">
+          <li>Abra o link pelo navegador <strong>Safari</strong> (não use Chrome no iPhone para instalar).</li>
+          <li>Toque no botão de <strong>Compartilhar</strong> (ícone de quadrado com a seta para cima, no centro inferior da tela).</li>
+          <li>Role a lista para baixo e toque em <strong>"Adicionar à Tela de Início"</strong>.</li>
+          <li>Toque em <strong>"Adicionar"</strong> no topo direito. O app aparecerá com o ícone oficial da AHS!</li>
+        </ol>
+      </div>
+
+      <!-- Passo a passo Android -->
+      <div class="p-3.5 bg-slate-900 rounded-xl border border-ahs-border space-y-2">
+        <div class="flex items-center gap-2 text-white font-bold text-xs">
+          <span class="w-5 h-5 rounded-full bg-emerald-600 flex items-center justify-center text-[11px] text-black">🤖</span>
+          No Android (Google Chrome)
+        </div>
+        <ol class="list-decimal list-inside space-y-1 text-slate-300 text-[11px] leading-relaxed">
+          <li>Abra o link pelo <strong>Google Chrome</strong>.</li>
+          <li>Toque nos <strong>três pontinhos (⋮)</strong> no canto superior direito.</li>
+          <li>Toque em <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.</li>
+          <li>Confirme e o app será instalado na sua tela inicial!</li>
+        </ol>
+      </div>
+
+      <!-- Dica do Microfone -->
+      <div class="p-3 bg-cyan-950/40 border border-cyan-800/40 rounded-xl text-slate-300 space-y-1">
+        <p class="font-bold text-ahs-cyan flex items-center gap-1.5 text-xs">
+          <i data-lucide="mic" class="w-4 h-4"></i> Dica de Ouro sobre o Microfone no Celular:
+        </p>
+        <p class="text-[11px] leading-relaxed">
+          Além do botão de voz no app, ao tocar em qualquer campo de texto, você pode usar a <strong>tecla de microfone do próprio teclado do seu celular</strong> (ao lado da barra de espaço). Ela funciona de forma nativa e sem falhas em qualquer aparelho!
+        </p>
+      </div>
+
+      <div class="pt-2 text-right">
+        <button onclick="app.closeInstallModal()" class="w-full py-2 bg-gradient-to-r from-ahs-cyan to-ahs-cyanHover text-black font-bold rounded-lg">
+          Entendi, fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST DE NOTIFICAÇÃO FLUTUANTE -->
   <div id="toast" class="fixed top-4 right-4 z-50 transform transition-all duration-300 translate-y-[-100px] opacity-0 pointer-events-none">
     <div id="toast-content" class="px-4 py-2.5 rounded-xl text-xs font-semibold shadow-2xl flex items-center gap-2 border">
@@ -960,6 +1034,8 @@
     // =========================================================================
     // CONFIGURAÇÕES E ESTADO GLOBAL
     // =========================================================================
+    const CONFIG_SUPABASE_URL = 'https://dnqkrqbvhoteiqlqxcgw.supabase.co';
+    const CONFIG_SUPABASE_KEY = 'sb_publishable_S1KFZ-5y9_qdHeOiOPjfGQ_wpW9xXSi';
     const SESSOES = [
       { id: 'Novo Contato', label: 'Novo Contato', icon: 'inbox', color: 'border-blue-500/60 bg-blue-500/10 text-blue-400' },
       { id: 'Orçamento Enviado', label: 'Orçamento Enviado', icon: 'file-text', color: 'border-cyan-500/60 bg-cyan-500/10 text-cyan-400' },
@@ -1055,8 +1131,12 @@
       }
 
       init() {
-        const storedUrl = localStorage.getItem('ahs_supabase_url') || '';
-        const storedKey = localStorage.getItem('ahs_supabase_key') || '';
+        if (CONFIG_SUPABASE_URL && CONFIG_SUPABASE_KEY) {
+          localStorage.setItem('ahs_supabase_url', CONFIG_SUPABASE_URL);
+          localStorage.setItem('ahs_supabase_key', CONFIG_SUPABASE_KEY);
+        }
+        const storedUrl = localStorage.getItem('ahs_supabase_url') || CONFIG_SUPABASE_URL || '';
+        const storedKey = localStorage.getItem('ahs_supabase_key') || CONFIG_SUPABASE_KEY || '';
 
         if (storedUrl && storedKey && window.supabase) {
           try {
@@ -1135,7 +1215,8 @@
 
         if (error) {
           console.error('Erro ao carregar atendimentos do Supabase:', error);
-          app.showToast('Erro ao carregar do Supabase. Usando cópia local.', 'error');
+          const msg = error.message || 'Verifique se a tabela foi criada no SQL Editor';
+          app.showToast(`Supabase: ${msg}`, 'error');
           const local = localStorage.getItem('ahs_local_atendimentos');
           return local ? JSON.parse(local) : DEMO_DATA;
         }
@@ -1162,7 +1243,9 @@
         if (this.currentUser && !payload.user_id) {
           payload.user_id = this.currentUser.id;
         }
-        if (!payload.id) delete payload.id; // Deixar Postgres gerar UUID
+        if (!payload.id || String(payload.id).startsWith('demo-')) {
+          delete payload.id; // Deixar Postgres gerar UUID real
+        }
 
         const { data, error } = await this.client
           .from('atendimentos')
@@ -1236,7 +1319,11 @@
         this.recognition.onerror = (event) => {
           console.error('Erro de reconhecimento de voz:', event.error);
           this.stop();
-          app.showToast('Microfone: ' + event.error, 'info');
+          if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+            app.showToast('Microfone bloqueado pelo navegador. Dica: você pode usar a tecla de microfone do teclado do celular!', 'error');
+          } else {
+            app.showToast('Microfone: ' + event.error + ' (Dica: use o microfone do teclado do celular)', 'info');
+          }
         };
 
         this.recognition.onend = () => {
@@ -1247,7 +1334,7 @@
 
       toggleListening() {
         if (!this.recognition) {
-          app.showToast('Reconhecimento de voz não suportado neste navegador.', 'error');
+          app.showToast('Voz do navegador indisponível. Dica: toque no campo e aperte a tecla de microfone do teclado do celular!', 'info');
           return;
         }
 
@@ -1469,6 +1556,14 @@
       }
 
       async init() {
+        // Detectar se abriu dentro do navegador do WhatsApp / Instagram
+        const isInternalBrowser = /WhatsApp|FBAN|FBAV|Instagram/i.test(navigator.userAgent);
+        if (isInternalBrowser) {
+          setTimeout(() => {
+            this.showToast('Abra no Chrome ou Safari para liberar o microfone e instalar!', 'info');
+          }, 1500);
+        }
+
         // Inicializar Supabase & Realtime
         supabaseManager.init();
 
@@ -2148,8 +2243,8 @@
 
       // ========================== CONFIGURAÇÃO DO SUPABASE =================
       openSupabaseModal() {
-        document.getElementById('config-supabase-url').value = localStorage.getItem('ahs_supabase_url') || '';
-        document.getElementById('config-supabase-key').value = localStorage.getItem('ahs_supabase_key') || '';
+        document.getElementById('config-supabase-url').value = localStorage.getItem('ahs_supabase_url') || CONFIG_SUPABASE_URL || '';
+        document.getElementById('config-supabase-key').value = localStorage.getItem('ahs_supabase_key') || CONFIG_SUPABASE_KEY || '';
         document.getElementById('modal-supabase').classList.remove('hidden');
       }
 
@@ -2274,6 +2369,15 @@
 
       closeHelpModal() {
         document.getElementById('modal-help').classList.add('hidden');
+      }
+
+      openInstallModal() {
+        document.getElementById('modal-install').classList.remove('hidden');
+        lucide.createIcons();
+      }
+
+      closeInstallModal() {
+        document.getElementById('modal-install').classList.add('hidden');
       }
 
       exportBackupJSON() {
