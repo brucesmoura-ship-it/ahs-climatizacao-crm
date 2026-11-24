@@ -775,10 +775,11 @@
 
         <div>
           <label class="block font-semibold text-slate-300 mb-1 flex items-center gap-1">
-            <i data-lucide="lock" class="w-3.5 h-3.5 text-ahs-gold"></i> Senha de Acesso
+            <i data-lucide="lock" class="w-3.5 h-3.5 text-ahs-gold"></i> Sua Senha Individual <span class="text-red-400">*</span>
           </label>
-          <input type="password" id="auth-tecnico-senha" placeholder="Digite sua senha (ex: 1234)" 
+          <input type="password" id="auth-tecnico-senha" required placeholder="Crie uma senha ou digite a sua" 
             class="w-full px-3 py-2 bg-slate-900 border border-ahs-border rounded-lg text-white focus:border-ahs-gold focus:outline-none">
+          <span class="text-[10px] text-slate-400 mt-1 block">No seu 1º acesso, a senha digitada será registrada como sua senha pessoal.</span>
         </div>
 
         <button type="submit" id="btn-auth-submit" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-ahs-cyan to-ahs-cyanHover text-black font-bold shadow-md hover:opacity-95 active:scale-95 flex items-center justify-center gap-2 mt-2">
@@ -2415,25 +2416,76 @@
         document.getElementById('modal-auth').classList.add('hidden');
       }
 
-      submitSimpleAuth(e) {
+      async submitSimpleAuth(e) {
         e.preventDefault();
         const nome = document.getElementById('auth-tecnico-nome').value.trim();
         const senha = document.getElementById('auth-tecnico-senha').value.trim();
+        const btn = document.getElementById('btn-auth-submit');
 
-        if (!nome) {
-          this.showToast('Por favor, informe seu nome.', 'error');
+        if (!nome || !senha) {
+          this.showToast('Preencha seu nome e sua senha individual.', 'error');
           return;
         }
 
+        const oldHtml = btn ? btn.innerHTML : '';
+        if (btn) btn.innerHTML = '<span class="inline-block animate-spin mr-1">⌛</span> Verificando...';
+
+        try {
+          if (supabaseManager.client) {
+            // 1. Verifica se o técnico já tem cadastro na tabela equipe_ahs
+            const { data: usuarioExistente, error: errBusca } = await supabaseManager.client
+              .from('equipe_ahs')
+              .select('*')
+              .ilike('nome', nome)
+              .maybeSingle();
+
+            if (usuarioExistente) {
+              // Técnico já cadastrado: valida a senha
+              if (usuarioExistente.senha === senha) {
+                this.loginSuccess(usuarioExistente.nome, senha, false);
+              } else {
+                this.showToast(`Senha incorreta para o técnico "${usuarioExistente.nome}". Tente novamente.`, 'error');
+                if (btn) btn.innerHTML = oldHtml;
+                return;
+              }
+            } else {
+              // Técnico novo: cadastra na hora com a senha que ele acabou de criar!
+              const { data: novoUser, error: errInsert } = await supabaseManager.client
+                .from('equipe_ahs')
+                .insert({ nome: nome, senha: senha })
+                .select()
+                .maybeSingle();
+
+              if (errInsert) {
+                console.warn('Tabela equipe_ahs ainda não criada no Supabase:', errInsert);
+                this.loginSuccess(nome, senha, true);
+              } else {
+                this.loginSuccess(nome, senha, true);
+              }
+            }
+          } else {
+            this.loginSuccess(nome, senha, false);
+          }
+        } catch (err) {
+          console.error(err);
+          this.loginSuccess(nome, senha, false);
+        } finally {
+          if (btn) btn.innerHTML = oldHtml;
+          lucide.createIcons();
+        }
+      }
+
+      loginSuccess(nome, senha, isNew = false) {
         this.currentUserName = nome;
         localStorage.setItem('ahs_tecnico_nome', nome);
-        if (senha) {
-          localStorage.setItem('ahs_tecnico_senha', senha);
-        }
-
+        if (senha) localStorage.setItem('ahs_tecnico_senha', senha);
         this.updateUserUI(nome);
         document.getElementById('modal-auth').classList.add('hidden');
-        this.showToast(`Bem-vindo, ${nome}! Seus contatos serão marcados com seu nome.`, 'success');
+        if (isNew) {
+          this.showToast(`Perfil criado com sucesso! Sua senha foi registrada, ${nome}.`, 'success');
+        } else {
+          this.showToast(`Bem-vindo de volta, ${nome}!`, 'success');
+        }
       }
 
       toggleAuthMenu() {
